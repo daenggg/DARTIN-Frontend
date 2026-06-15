@@ -7,7 +7,6 @@ const Login = (): React.JSX.Element => {
 
   // 카카오 공식 로그인 창으로 이동할 URL
   const KAKAO_AUTH_URL = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`;
-  console.log("현재 내 컴퓨터가 읽은 카카오 키:", REST_API_KEY);
 
   const handleKakaoLogin = (): void => {
     window.location.href = KAKAO_AUTH_URL;
