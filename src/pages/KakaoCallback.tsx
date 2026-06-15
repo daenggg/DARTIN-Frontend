@@ -14,9 +14,9 @@ const KakaoCallback = (): React.JSX.Element => {
 
     const sendCodeToBackend = async (kakaoCode: string) => {
       try {
-        // '/auth/login'
+        // '/api/auth/login'
         const response = await axios.post(
-          `${BACKEND_URL}/auth/login`,
+          `${BACKEND_URL}/api/auth/login`,
           { code: kakaoCode },
           { withCredentials: true },
         );
@@ -24,6 +24,7 @@ const KakaoCallback = (): React.JSX.Element => {
         if (response.status === 200) {
           const { accessToken, user } = response.data;
           sessionStorage.setItem("accessToken", accessToken);
+          sessionStorage.setItem("user", JSON.stringify(user));
           alert(`${user.nickname}님, 환영합니다!`);
           navigate("/home");
         }
