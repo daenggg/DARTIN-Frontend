@@ -2,6 +2,9 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// React StrictMode로 인해 컴포넌트가 두 번 마운트되어 API가 중복 호출되는 것을 방지하기 위한 플래그
+let isSent = false;
+
 const KakaoCallback = (): React.JSX.Element => {
   const navigate = useNavigate();
 
@@ -32,11 +35,17 @@ const KakaoCallback = (): React.JSX.Element => {
         console.error("백엔드 통신 에러:", error);
         alert("로그인 처리 중 서버 오류가 발생했습니다.");
         navigate("/");
+      } finally {
+        // 성공/실패 여부와 관계없이 처리가 완료되면 플래그 해제 (다시 로그인 시도 등을 위해)
+        isSent = false;
       }
     };
 
     if (code) {
-      sendCodeToBackend(code);
+      if (!isSent) {
+        isSent = true;
+        sendCodeToBackend(code);
+      }
     } else {
       navigate("/");
     }
