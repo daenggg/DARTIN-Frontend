@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 interface Message {
   sender: "user" | "ai";
   text: string;
+  isStreaming?: boolean;
+  candidates?: Array<{ corp_name: string; corp_code: string }>;
 }
 
 interface ChatAreaProps {
@@ -13,6 +15,7 @@ interface ChatAreaProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   companyName: string;
+  onSelectCandidate: (corpCode: string, corpName: string) => void;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -23,19 +26,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   isSidebarOpen,
   onToggleSidebar,
   companyName,
+  onSelectCandidate,
 }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // 대화 추가 시 자동 스크롤 하단 고정
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <section
@@ -77,6 +75,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            height: "32px",
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.backgroundColor = "#f4f4f5";
@@ -102,83 +101,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           </svg>
         </button>
 
-        {/* 우측 3점 메뉴 */}
-        <div ref={menuRef} style={{ position: "relative", display: "inline-block" }}>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              color: "#71717a",
-              cursor: "pointer",
-              padding: "0 8px",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "28px",
-              transition: "background-color 0.15s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-          >
-            ⋮
-          </button>
-
-          {isMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "32px",
-                backgroundColor: "#ffffff",
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-                borderRadius: "8px",
-                padding: "6px",
-                zIndex: 100,
-                width: "140px",
-                border: "1px solid #e4e4e7",
-                display: "flex",
-                flexDirection: "column",
-                gap: "2px",
-              }}
-            >
-              {[
-                { label: "대화 공유", action: () => alert("대화가 공유되었습니다.") },
-                { label: "고정", action: () => alert(`${companyName} 대화가 고정되었습니다.`) },
-                { label: "이름 변경", action: () => alert("이름 변경 창이 열립니다.") },
-                { label: "노트북에 추가", action: () => alert("노트북에 추가되었습니다.") },
-                { label: "삭제", action: () => alert("삭제되었습니다."), color: "#ef4444" },
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    item.action();
-                    setIsMenuOpen(false);
-                  }}
-                  style={{
-                    padding: "8px 12px",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontWeight: "400",
-                    color: item.color || "#18181b",
-                    textAlign: "left",
-                    transition: "background-color 0.15s",
-                    width: "100%",
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* 대화 피드 */}
@@ -213,44 +135,118 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   color: "#18181b",
                   fontSize: "13px",
                   lineHeight: "1.6",
+                  textAlign: "left",
                 }}
               >
                 {msg.text}
               </div>
             ) : (
-              <div style={{ display: "flex", gap: "12px", maxWidth: "90%" }}>
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    backgroundColor: "#18181b",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#ffffff",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    flexShrink: 0,
-                  }}
-                >
-                  AI
+              <div style={{ display: "flex", gap: "12px", maxWidth: "90%", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "6px",
+                      backgroundColor: "#18181b",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#ffffff",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      flexShrink: 0,
+                    }}
+                  >
+                    AI
+                  </div>
+                  <div
+                    style={{
+                      color: "#18181b",
+                      fontSize: "13px",
+                      lineHeight: "1.6",
+                      paddingTop: "4px",
+                      whiteSpace: "pre-wrap",
+                      textAlign: "left",
+                    }}
+                  >
+                    <style>{`
+                      @keyframes wordWave {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-4px); }
+                      }
+                    `}</style>
+                    {msg.isStatus ? (
+                      <div style={{ display: "inline-flex", flexWrap: "wrap", color: "#71717a", fontWeight: "500" }}>
+                        {msg.text.split("").map((char, index) => (
+                          <span
+                            key={index}
+                            style={{
+                              display: "inline-block",
+                              animation: "wordWave 1.4s infinite ease-in-out",
+                              animationDelay: `${index * 0.06}s`,
+                              whiteSpace: char === " " ? "pre" : "normal"
+                            }}
+                          >
+                            {char}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      msg.text
+                    )}
+                  </div>
                 </div>
-                <div
-                  style={{
-                    color: "#18181b",
-                    fontSize: "13px",
-                    lineHeight: "1.6",
-                    paddingTop: "4px",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {msg.text}
-                </div>
+
+                {/* 기업 후보군 카드식 알약 버튼 렌더링 */}
+                {msg.candidates && msg.candidates.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      marginLeft: "40px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {msg.candidates.map((cand, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => onSelectCandidate(cand.corp_code, cand.corp_name)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          backgroundColor: "#ffffff",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "100px",
+                          padding: "6px 14px",
+                          fontSize: "12px",
+                          color: "#4f46e5",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f5f3ff";
+                          e.currentTarget.style.borderColor = "#818cf8";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = "#ffffff";
+                          e.currentTarget.style.borderColor = "#cbd5e1";
+                        }}
+                      >
+                        🏢 {cand.corp_name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
         ))}
+        <div ref={chatEndRef} />
       </div>
 
       {/* 입력창 */}
@@ -278,7 +274,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             type="text"
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
-            placeholder="질문을 입력하세요..."
+            placeholder={companyName === "새 문서" ? "분석할 기업명을 입력하세요..." : "추가 질문을 입력하세요..."}
             style={{
               flex: 1,
               border: "none",

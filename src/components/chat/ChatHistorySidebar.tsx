@@ -1,28 +1,50 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+interface SessionSummary {
+  sessionId: string;
+  companyName: string;
+  updatedAt: string;
+}
 
 interface ChatHistorySidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectHistory: (company: string) => void;
+  onSelectHistory: (sessionId: string, companyName: string) => void;
+  activeSessionId?: string;
 }
 
 const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   isOpen,
   onClose,
   onSelectHistory,
+  activeSessionId,
 }) => {
-  const [pinnedIds, setPinnedIds] = useState<number[]>([1, 2]); // SK하이닉스, 삼성전자 고정 예시
-  const [activeItem, setActiveItem] = useState<string>("SK하이닉스");
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  const histories = [
-    { id: 1, company: "SK하이닉스", isPinned: true },
-    { id: 2, company: "삼성전자", isPinned: true },
-    { id: 3, company: "현대자동차", isPinned: false },
-    { id: 4, company: "네이버 주식회사", isPinned: false },
-    { id: 5, company: "카카오 공동체 채용공고 분석", isPinned: false },
-  ];
+  const fetchSessions = async () => {
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/chat/sessions`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" }
+      });
+      if (res.data?.sessions) {
+        setSessions(res.data.sessions);
+      }
+    } catch (err) {
+      console.error("Failed to load sessions:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSessions();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleCloseMenu = () => setActiveMenuId(null);
@@ -30,17 +52,36 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     return () => document.removeEventListener("click", handleCloseMenu);
   }, []);
 
-  const togglePin = (id: number, e: React.MouseEvent) => {
+  const togglePin = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPinnedIds(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
-  const handleItemClick = (company: string) => {
-    setActiveItem(company);
-    onSelectHistory(company);
-    onClose(); // 오버레이 레이아웃이므로 선택 시 사이드바 닫아주기
+  const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+    try {
+      await axios.delete(`${BACKEND_URL}/api/chat/sessions/${id}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" }
+      });
+      // 리스트 갱신
+      setSessions(prev => prev.filter(s => s.sessionId !== id));
+      if (activeSessionId === id) {
+        onSelectHistory("New", "새 문서");
+      }
+      alert("분석 세션이 삭제되었습니다.");
+    } catch (err) {
+      console.error("Failed to delete session:", err);
+      alert("세션 삭제 도중 에러가 발생했습니다.");
+    }
+  };
+
+  const handleItemClick = (id: string, companyName: string) => {
+    onSelectHistory(id, companyName);
+    onClose();
   };
 
   const dropdownItemStyle: React.CSSProperties = {
@@ -57,9 +98,19 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     transition: "background-color 0.15s",
   };
 
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const aPinned = pinnedIds.includes(a.sessionId);
+    const bPinned = pinnedIds.includes(b.sessionId);
+
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+
   return (
     <>
-      {/* 백드롭 레이어: 전체화면을 다 덮음 */}
+      {/* 백드롭 레이어 */}
       {isOpen && (
         <div
           onClick={onClose}
@@ -89,7 +140,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
           display: "flex",
           flexDirection: "column",
-          zIndex: 1000, // 가장 우선 순위가 높은 레이어 설정
+          zIndex: 1000,
           boxSizing: "border-box",
           fontFamily: "'Inter', sans-serif",
           boxShadow: isOpen ? "4px 0 24px rgba(0, 0, 0, 0.08)" : "none",
@@ -128,11 +179,11 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           </button>
         </div>
 
-        {/* 새 대화 버튼 (깔끔한 그레이 아웃라인 알약형 버튼) */}
+        {/* 새 대화 버튼 */}
         <div style={{ padding: "0 16px 16px 16px", whiteSpace: "nowrap" }}>
           <button
             onClick={() => {
-              onSelectHistory("New");
+              onSelectHistory("New", "새 문서");
               onClose();
             }}
             style={{
@@ -170,169 +221,164 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             gap: "2px",
           }}
         >
-          {histories.map((item) => {
-            const isPinned = pinnedIds.includes(item.id);
-            const isActive = activeItem === item.company;
-            const isHovered = hoveredId === item.id;
+          {sortedSessions.length === 0 ? (
+            <div style={{ fontSize: "11px", color: "#a1a1aa", padding: "24px 0", textAlign: "center" }}>
+              분석 이력이 존재하지 않습니다.
+            </div>
+          ) : (
+            sortedSessions.map((item) => {
+              const isPinned = pinnedIds.includes(item.sessionId);
+              const isActive = activeSessionId === item.sessionId;
+              const isHovered = hoveredId === item.sessionId;
 
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleItemClick(item.company)}
-                onMouseEnter={() => setHoveredId(item.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  backgroundColor: isActive ? "#f4f4f5" : "transparent",
-                  cursor: "pointer",
-                  transition: "all 0.1s ease",
-                  whiteSpace: "nowrap",
-                  fontSize: "12px",
-                  fontWeight: isActive ? "600" : "400",
-                  color: isActive ? "#18181b" : "#71717a",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "6px",
-                  position: "relative",
-                }}
-                onMouseOver={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = "#fafafa";
-                    e.currentTarget.style.color = "#18181b";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "#71717a";
-                  }
-                }}
-              >
-                <span
+              return (
+                <div
+                  key={item.sessionId}
+                  onClick={() => handleItemClick(item.sessionId, item.companyName)}
+                  onMouseEnter={() => setHoveredId(item.sessionId)}
+                  onMouseLeave={() => setHoveredId(null)}
                   style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    backgroundColor: isActive ? "#f4f4f5" : "transparent",
+                    borderLeft: isActive ? "3px solid #18181b" : "3px solid transparent",
+                    paddingLeft: isActive ? "9px" : "12px",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
                     whiteSpace: "nowrap",
-                    flex: 1,
-                    textAlign: "left"
+                    fontSize: "12px",
+                    fontWeight: isActive ? "600" : "400",
+                    color: isActive ? "#18181b" : "#71717a",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "6px",
+                    position: "relative",
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = "#fafafa";
+                      e.currentTarget.style.color = "#18181b";
+                      e.currentTarget.style.borderLeftColor = "#e4e4e7";
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#71717a";
+                      e.currentTarget.style.borderLeftColor = "transparent";
+                    }
                   }}
                 >
-                  {item.company}
-                </span>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
-                  {isHovered ? (
-                    /* 호버 시 나타나는 점 세개 버튼 */
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMenuId(activeMenuId === item.id ? null : item.id);
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "2px 4px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        color: "#71717a",
-                        transition: "all 0.15s ease",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = "#e4e4e7";
-                        e.currentTarget.style.color = "#18181b";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "#71717a";
-                      }}
-                    >
-                      ⋮
-                    </button>
-                  ) : (
-                    /* 고정 핀 표시 (고정 상태이면서 호버되지 않았을 때만 노출) */
-                    isPinned && (
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="#18181b"
-                        stroke="#71717a"
-                        strokeWidth="2"
-                        style={{ flexShrink: 0 }}
-                      >
-                        <line x1="18" y1="8" x2="22" y2="12"></line>
-                        <line x1="12" y1="2" x2="22" y2="12"></line>
-                        <path d="M12 2L2 12h5l9 9v-5z"></path>
-                      </svg>
-                    )
-                  )}
-                </div>
-
-                {/* 드롭다운 메뉴 (Dropbox) */}
-                {activeMenuId === item.id && (
-                  <div
+                  <span
                     style={{
-                      position: "absolute",
-                      right: "12px",
-                      top: "28px",
-                      backgroundColor: "#ffffff",
-                      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-                      borderRadius: "6px",
-                      padding: "4px",
-                      zIndex: 1010,
-                      width: "100px",
-                      border: "1px solid #e4e4e7",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "2px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      flex: 1,
+                      textAlign: "left"
                     }}
                   >
-                    <button
-                      onClick={(e) => {
-                        togglePin(item.id, e);
-                        setActiveMenuId(null);
-                      }}
-                      style={dropdownItemStyle}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      {isPinned ? "고정 해제" : "고정"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert("이름 변경 창이 열립니다.");
-                        setActiveMenuId(null);
-                      }}
-                      style={dropdownItemStyle}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      이름 변경
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert("삭제되었습니다.");
-                        setActiveMenuId(null);
-                      }}
-                      style={{ ...dropdownItemStyle, color: "#ef4444" }}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#fee2e2")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      삭제
-                    </button>
+                    {item.companyName}
+                  </span>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
+                    {isHovered ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === item.sessionId ? null : item.sessionId);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "2px 4px",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                          color: "#71717a",
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = "#e4e4e7";
+                          e.currentTarget.style.color = "#18181b";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.color = "#71717a";
+                        }}
+                      >
+                        ⋮
+                      </button>
+                    ) : (
+                      isPinned && (
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="#18181b"
+                          stroke="#71717a"
+                          strokeWidth="2"
+                          style={{ flexShrink: 0 }}
+                        >
+                          <line x1="18" y1="8" x2="22" y2="12"></line>
+                          <line x1="12" y1="2" x2="22" y2="12"></line>
+                          <path d="M12 2L2 12h5l9 9v-5z"></path>
+                        </svg>
+                      )
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* 드롭다운 메뉴 */}
+                  {activeMenuId === item.sessionId && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: "12px",
+                        top: "28px",
+                        backgroundColor: "#ffffff",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                        borderRadius: "6px",
+                        padding: "4px",
+                        zIndex: 1010,
+                        width: "100px",
+                        border: "1px solid #e4e4e7",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "2px",
+                      }}
+                    >
+                      <button
+                        onClick={(e) => {
+                          togglePin(item.sessionId, e);
+                          setActiveMenuId(null);
+                        }}
+                        style={dropdownItemStyle}
+                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
+                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      >
+                        {isPinned ? "고정 해제" : "고정"}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          handleDeleteSession(item.sessionId, e);
+                          setActiveMenuId(null);
+                        }}
+                        style={{ ...dropdownItemStyle, color: "#ef4444" }}
+                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#fee2e2")}
+                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </aside>
     </>
