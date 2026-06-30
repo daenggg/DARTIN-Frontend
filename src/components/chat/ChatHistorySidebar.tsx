@@ -30,7 +30,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
       const res = await axios.get(`${BACKEND_URL}/api/chat/sessions`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" }
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
       if (res.data?.sessions) {
         setSessions(res.data.sessions);
@@ -54,8 +54,8 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   const togglePin = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setPinnedIds(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    setPinnedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -65,9 +65,9 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
       await axios.delete(`${BACKEND_URL}/api/chat/sessions/${id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" }
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-      setSessions(prev => prev.filter(s => s.sessionId !== id));
+      setSessions((prev) => prev.filter((s) => s.sessionId !== id));
       if (activeSessionId === id) {
         onSelectHistory("New", "새 문서");
       }
@@ -117,12 +117,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <span className="font-bold text-lg text-[#1f1f1f]">
             최근 분석 목록
           </span>
-          <button
-            onClick={onClose}
-            className="bg-transparent border-none text-[#5f6368] cursor-pointer text-xl font-bold p-1 px-2 rounded-full transition-colors duration-200 hover:bg-[#f0f4f9]"
-          >
-            ✕
-          </button>
         </div>
 
         {/* 새 대화 버튼 */}
@@ -132,14 +126,17 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               onSelectHistory("New", "새 문서");
               onClose();
             }}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#f0f4f9] border border-solid border-[#cbd5e1] rounded-full text-[#1f1f1f] font-semibold text-md cursor-pointer transition-all duration-200 hover:bg-[#e3e3e3]"
+            className="flex items-center justify-center gap-1 w-full  bg-[#f0f4f9] border border-solid border-[#cbd5e1] rounded-full text-[#1f1f1f] text-md cursor-pointer transition-all duration-200 hover:bg-[#e3e3e3]"
           >
-            <span>+</span> 새 분석 요청
+            <span>+ 새 채팅</span>
           </button>
         </div>
 
+        {/* 구분선 */}
+        <div className="mx-4 mb-3 border-t border-solid border-[#e4e4e7]" />
+
         {/* 히스토리 목록 */}
-        <div className="custom-scrollbar flex-1 overflow-y-auto px-3 pb-4 flex flex-col gap-0.5">
+        <div className="custom-scrollbar flex-1 overflow-y-auto px-3 flex flex-col">
           {sortedSessions.length === 0 ? (
             <div className="text-xs text-[#a1a1aa] py-6 text-center">
               분석 이력이 존재하지 않습니다.
@@ -153,12 +150,14 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               return (
                 <div
                   key={item.sessionId}
-                  onClick={() => handleItemClick(item.sessionId, item.companyName)}
+                  onClick={() =>
+                    handleItemClick(item.sessionId, item.companyName)
+                  }
                   onMouseEnter={() => setHoveredId(item.sessionId)}
                   onMouseLeave={() => setHoveredId(null)}
-                  className={`p-2 px-3 rounded-md cursor-pointer transition-all duration-150 flex items-center justify-between gap-1.5 relative border-l-[3px] border-solid ${
+                  className={`pl-3  mb-1.5 h-6 rounded-md cursor-pointer transition-all duration-150 flex items-center justify-between gap-1.5 relative border-l-[3px] border-solid box-border text-sm ${
                     isActive
-                      ? "bg-[#f4f4f5] border-l-[#18181b] text-[#18181b] font-semibold pl-2.5"
+                      ? "bg-[#f4f4f5] border-l-[#18181b] text-[#18181b] font-semibold"
                       : "border-l-transparent text-[#71717a] font-normal hover:bg-[#fafafa] hover:text-[#18181b] hover:border-l-[#e4e4e7]"
                   }`}
                 >
@@ -166,31 +165,34 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                     {item.companyName}
                   </span>
 
-                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-1.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {isHovered ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveMenuId(activeMenuId === item.sessionId ? null : item.sessionId);
+                          setActiveMenuId(
+                            activeMenuId === item.sessionId
+                              ? null
+                              : item.sessionId,
+                          );
                         }}
-                        className="bg-transparent border-none cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded text-sm text-[#71717a] transition-all duration-150 hover:bg-[#e4e4e7] hover:text-[#18181b]"
+                        className="bg-transparent border-none cursor-pointer flex items-center justify-center h-6 w-6 rounded text-sm text-[#71717a] transition-all duration-150 hover:bg-[#e4e4e7] hover:text-[#18181b]"
                       >
                         ⋮
                       </button>
                     ) : (
                       isPinned && (
                         <svg
-                          width="11"
-                          height="11"
                           viewBox="0 0 24 24"
-                          fill="#18181b"
-                          stroke="#71717a"
-                          strokeWidth="2"
-                          className="shrink-0"
+                          width="12"
+                          height="12"
+                          fill="#71717a"
+                          className="shrink-0 mr-2"
                         >
-                          <line x1="18" y1="8" x2="22" y2="12"></line>
-                          <line x1="12" y1="2" x2="22" y2="12"></line>
-                          <path d="M12 2L2 12h5l9 9v-5z"></path>
+                          <path d="M16 12V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v8l-2 2v2h5.2v6l1.3 1.3L13.8 18v-2H19v-2l-2-2z" />
                         </svg>
                       )
                     )}

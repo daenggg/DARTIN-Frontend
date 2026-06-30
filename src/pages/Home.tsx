@@ -10,14 +10,13 @@ import DashboardTab from "../components/company/tabs/DashboardTab";
 import CompanyInfoTab from "../components/company/tabs/CompanyInfoTab";
 import FinancialsTab from "../components/company/tabs/FinancialsTab";
 import NewsTab from "../components/company/tabs/NewsTab";
-import AIAnalysisTab from "../components/company/tabs/AIAnalysisTab";
 
 import { fetchCompanyAnalysis } from "../services/companyApi";
 import type {
   CompanyBasicInfo,
   FinancialInfoMap,
   NewsItem,
-  JobLinks
+  JobLinks,
 } from "../services/companyApi";
 import axios from "axios";
 
@@ -33,22 +32,27 @@ const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("사용자");
   const [activeTab, setActiveTab] = useState<string>("대시보드");
-  
+
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
-  const [leftWidth, setLeftWidth] = useState<number>(420); // 기본값 420px
+  const [leftWidth, setLeftWidth] = useState<number>(() =>
+    Math.round(window.innerWidth * 0.35),
+  ); // 기본 비율 3.5 : 6.5 (채팅 3.5 : 대시보드 6.5)
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
   // 실시간 수집 데이터 상태 관리
-  const [analysisData, setAnalysisData] = useState<{
-    basicInfo?: CompanyBasicInfo;
-    financialInfo?: FinancialInfoMap;
-    news?: NewsItem[];
-    aiAnalysis?: string;
-    jobLinks?: JobLinks;
-    sessionId?: string;
-  } | undefined>(undefined);
+  const [analysisData, setAnalysisData] = useState<
+    | {
+        basicInfo?: CompanyBasicInfo;
+        financialInfo?: FinancialInfoMap;
+        news?: NewsItem[];
+        aiAnalysis?: string;
+        jobLinks?: JobLinks;
+        sessionId?: string;
+      }
+    | undefined
+  >(undefined);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -85,8 +89,8 @@ const Home = (): React.JSX.Element => {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
-      text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오."
-    }
+      text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+    },
   ]);
   const [inputValue, setInputValue] = useState<string>("");
 
@@ -110,9 +114,12 @@ const Home = (): React.JSX.Element => {
         const token = sessionStorage.getItem("accessToken");
         const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
         try {
-          const res = await axios.get(`${BACKEND_URL}/api/chat/sessions/${storedSessionId}`, {
-            headers: { Authorization: token ? `Bearer ${token}` : "" }
-          });
+          const res = await axios.get(
+            `${BACKEND_URL}/api/chat/sessions/${storedSessionId}`,
+            {
+              headers: { Authorization: token ? `Bearer ${token}` : "" },
+            },
+          );
           const detail = res.data;
           if (detail) {
             setAnalysisData({
@@ -121,18 +128,25 @@ const Home = (): React.JSX.Element => {
               news: detail.company.news,
               aiAnalysis: detail.company.aiAnalysis,
               jobLinks: detail.company.jobLinks,
-              sessionId: detail.sessionId
+              sessionId: detail.sessionId,
             });
             setSelectedCompany(detail.company.basicInfo.companyName);
 
             // 복원된 채팅 기록 매핑
             const mappedMsgs = detail.chat.messages.map((m: any) => ({
               sender: m.role === "user" ? "user" : "ai",
-              text: m.content
+              text: m.content,
             }));
-            setMessages(mappedMsgs.length > 0 ? mappedMsgs : [
-              { sender: "ai", text: `"${detail.company.basicInfo.companyName}" 분석 대화가 복구되었습니다.` }
-            ]);
+            setMessages(
+              mappedMsgs.length > 0
+                ? mappedMsgs
+                : [
+                    {
+                      sender: "ai",
+                      text: `"${detail.company.basicInfo.companyName}" 분석 대화가 복구되었습니다.`,
+                    },
+                  ],
+            );
           }
         } catch (err) {
           console.error("Mount session restoration failed:", err);
@@ -140,7 +154,7 @@ const Home = (): React.JSX.Element => {
         }
       }
     };
-    
+
     restoreSession();
   }, []);
 
@@ -148,10 +162,14 @@ const Home = (): React.JSX.Element => {
     const token = sessionStorage.getItem("accessToken");
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
-      await axios.post(`${BACKEND_URL}/api/auth/logout`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
+      await axios.post(
+        `${BACKEND_URL}/api/auth/logout`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+      );
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -164,18 +182,25 @@ const Home = (): React.JSX.Element => {
 
   // 기업 후보 선택 후 데이터 로드 핸들러
   const handleSelectCandidate = async (corpCode: string, corpName: string) => {
-    setMessages(prev => [...prev, { sender: "user", text: `[선택] ${corpName}` }]);
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: `[선택] ${corpName}` },
+    ]);
     setSelectedCompany(corpName);
     setAnalysisData(undefined); // 대기 상태로 전환
 
-    setMessages(prev => [
+    setMessages((prev) => [
       ...prev,
-      { sender: "ai", text: `🔄 "${corpName}"의 실시간 데이터를 수집 및 분석하는 중입니다. 잠시만 기다려 주세요...`, isStreaming: true }
+      {
+        sender: "ai",
+        text: `🔄 "${corpName}"의 실시간 데이터를 수집 및 분석하는 중입니다. 잠시만 기다려 주세요...`,
+        isStreaming: true,
+      },
     ]);
 
     try {
       const data = await fetchCompanyAnalysis(corpCode);
-      
+
       // 상태 저장
       setAnalysisData({
         basicInfo: data.basicInfo,
@@ -183,33 +208,33 @@ const Home = (): React.JSX.Element => {
         news: data.news,
         aiAnalysis: data.aiAnalysis,
         jobLinks: data.jobLinks,
-        sessionId: data.session?.sessionId
+        sessionId: data.session?.sessionId,
       });
 
       if (data.session?.sessionId) {
         sessionStorage.setItem("currentSessionId", data.session.sessionId);
       }
 
-      setMessages(prev => {
+      setMessages((prev) => {
         const listWithoutLoading = prev.slice(0, -1);
         return [
           ...listWithoutLoading,
           {
             sender: "ai",
-            text: `✨ "${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`
-          }
+            text: `✨ "${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
+          },
         ];
       });
     } catch (err) {
       console.error(err);
-      setMessages(prev => {
+      setMessages((prev) => {
         const listWithoutLoading = prev.slice(0, -1);
         return [
           ...listWithoutLoading,
           {
             sender: "ai",
-            text: "⚠️ 기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
-          }
+            text: "⚠️ 기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+          },
         ];
       });
     }
@@ -220,7 +245,7 @@ const Home = (): React.JSX.Element => {
     if (!inputValue.trim()) return;
 
     const userMsg = inputValue.trim();
-    setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
+    setMessages((prev) => [...prev, { sender: "user", text: userMsg }]);
     setInputValue("");
 
     // 1. 이미 세션이 열린 상태에서의 후속 질문 (스트리밍)
@@ -247,7 +272,15 @@ const Home = (): React.JSX.Element => {
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
 
-        setMessages(prev => [...prev, { sender: "ai", text: "답변을 준비하고 있습니다", isStreaming: true, isStatus: true }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: "답변을 준비하고 있습니다",
+            isStreaming: true,
+            isStatus: true,
+          },
+        ]);
 
         while (true) {
           const { value, done } = await reader.read();
@@ -268,47 +301,47 @@ const Home = (): React.JSX.Element => {
                 const eventData = parsed.data;
 
                 if (eventType === "message") {
-                  setMessages(prev => {
+                  setMessages((prev) => {
                     const last = prev[prev.length - 1];
                     if (last && last.sender === "ai" && last.isStreaming) {
                       if (last.isStatus) {
                         return [
                           ...prev.slice(0, -1),
-                          { ...last, text: eventData, isStatus: false }
+                          { ...last, text: eventData, isStatus: false },
                         ];
                       }
                       return [
                         ...prev.slice(0, -1),
-                        { ...last, text: last.text + eventData }
+                        { ...last, text: last.text + eventData },
                       ];
                     }
                     return prev;
                   });
                 } else if (eventType === "status") {
-                  setMessages(prev => {
+                  setMessages((prev) => {
                     const last = prev[prev.length - 1];
                     if (last && last.sender === "ai" && last.isStreaming) {
                       return [
                         ...prev.slice(0, -1),
-                        { ...last, text: eventData, isStatus: true }
+                        { ...last, text: eventData, isStatus: true },
                       ];
                     }
                     return prev;
                   });
                 }
               } catch (e) {
-                setMessages(prev => {
+                setMessages((prev) => {
                   const last = prev[prev.length - 1];
                   if (last && last.sender === "ai" && last.isStreaming) {
                     if (last.isStatus) {
                       return [
                         ...prev.slice(0, -1),
-                        { ...last, text: rawData, isStatus: false }
+                        { ...last, text: rawData, isStatus: false },
                       ];
                     }
                     return [
                       ...prev.slice(0, -1),
-                      { ...last, text: last.text + rawData }
+                      { ...last, text: last.text + rawData },
                     ];
                   }
                   return prev;
@@ -318,20 +351,19 @@ const Home = (): React.JSX.Element => {
           }
         }
 
-        setMessages(prev => {
+        setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last && last.sender === "ai" && last.isStreaming) {
-            return [
-              ...prev.slice(0, -1),
-              { ...last, isStreaming: false }
-            ];
+            return [...prev.slice(0, -1), { ...last, isStreaming: false }];
           }
           return prev;
         });
-
       } catch (err) {
         console.error(err);
-        setMessages(prev => [...prev, { sender: "ai", text: "⚠️ 대화 응답을 수신하는 데 실패했습니다." }]);
+        setMessages((prev) => [
+          ...prev,
+          { sender: "ai", text: "⚠️ 대화 응답을 수신하는 데 실패했습니다." },
+        ]);
       }
       return;
     }
@@ -339,25 +371,25 @@ const Home = (): React.JSX.Element => {
     // 2. 세션이 없는 경우 최초 기업명 추출 후보 검색
     const token = sessionStorage.getItem("accessToken");
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-    
-    setMessages(prev => [
+
+    setMessages((prev) => [
       ...prev,
       {
         sender: "ai",
         text: "🔍 입력하신 기업의 후보 목록을 검색하는 중입니다...",
-        isStreaming: true
-      }
+        isStreaming: true,
+      },
     ]);
 
     try {
       const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
         params: { search_query: userMsg },
-        headers: { Authorization: token ? `Bearer ${token}` : "" }
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
 
       const candidates = res.data?.companies;
 
-      setMessages(prev => {
+      setMessages((prev) => {
         const listWithoutLoading = prev.slice(0, -1);
         if (Array.isArray(candidates) && candidates.length > 0) {
           return [
@@ -367,9 +399,9 @@ const Home = (): React.JSX.Element => {
               text: `"${userMsg}"에 대한 후보 기업 검색 결과입니다. 분석을 원하는 기업을 선택해 주세요:`,
               candidates: candidates.map((c: any) => ({
                 corp_name: c.corpName,
-                corp_code: c.corpCode
-              }))
-            }
+                corp_code: c.corpCode,
+              })),
+            },
           ];
         } else {
           return [
@@ -381,15 +413,15 @@ const Home = (): React.JSX.Element => {
                 { corp_name: "삼성전자", corp_code: "00126380" },
                 { corp_name: "SK하이닉스", corp_code: "00164779" },
                 { corp_name: "현대자동차", corp_code: "00164742" },
-                { corp_name: "카카오", corp_code: "00258865" }
-              ]
-            }
+                { corp_name: "카카오", corp_code: "00258865" },
+              ],
+            },
           ];
         }
       });
     } catch (err: any) {
       console.error(err);
-      setMessages(prev => {
+      setMessages((prev) => {
         const listWithoutLoading = prev.slice(0, -1);
         const status = err.response?.status;
         const detail = err.response?.data?.detail;
@@ -404,9 +436,9 @@ const Home = (): React.JSX.Element => {
                 { corp_name: "삼성전자", corp_code: "00126380" },
                 { corp_name: "SK하이닉스", corp_code: "00164779" },
                 { corp_name: "현대자동차", corp_code: "00164742" },
-                { corp_name: "카카오", corp_code: "00258865" }
-              ]
-            }
+                { corp_name: "카카오", corp_code: "00258865" },
+              ],
+            },
           ];
         }
 
@@ -414,20 +446,23 @@ const Home = (): React.JSX.Element => {
           ...listWithoutLoading,
           {
             sender: "ai",
-            text: `⚠️ 후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`
-          }
+            text: `⚠️ 후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`,
+          },
         ];
       });
     }
   };
 
-  const handleSelectHistory = async (sessionId: string, companyName: string) => {
+  const handleSelectHistory = async (
+    sessionId: string,
+    companyName: string,
+  ) => {
     if (sessionId === "New") {
       setMessages([
         {
           sender: "ai",
-          text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오."
-        }
+          text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+        },
       ]);
       setSelectedCompany("새 문서");
       setAnalysisData(undefined);
@@ -435,13 +470,16 @@ const Home = (): React.JSX.Element => {
     } else {
       setSelectedCompany(companyName);
       sessionStorage.setItem("currentSessionId", sessionId);
-      
+
       const token = sessionStorage.getItem("accessToken");
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/chat/sessions/${sessionId}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" }
-        });
+        const res = await axios.get(
+          `${BACKEND_URL}/api/chat/sessions/${sessionId}`,
+          {
+            headers: { Authorization: token ? `Bearer ${token}` : "" },
+          },
+        );
         const detail = res.data;
         if (detail) {
           setAnalysisData({
@@ -450,24 +488,34 @@ const Home = (): React.JSX.Element => {
             news: detail.company.news,
             aiAnalysis: detail.company.aiAnalysis,
             jobLinks: detail.company.jobLinks,
-            sessionId: detail.sessionId
+            sessionId: detail.sessionId,
           });
 
           // 복원된 채팅 메시지 매핑 (role -> sender)
           const mappedMsgs = detail.chat.messages.map((m: any) => ({
             sender: m.role === "user" ? "user" : "ai",
-            text: m.content
+            text: m.content,
           }));
-          
-          setMessages(mappedMsgs.length > 0 ? mappedMsgs : [
-            { sender: "ai", text: `"${companyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.` }
-          ]);
+
+          setMessages(
+            mappedMsgs.length > 0
+              ? mappedMsgs
+              : [
+                  {
+                    sender: "ai",
+                    text: `"${companyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.`,
+                  },
+                ],
+          );
         }
       } catch (err) {
         console.error("Failed to load session details:", err);
-        setMessages(prev => [
+        setMessages((prev) => [
           ...prev,
-          { sender: "ai", text: "⚠️ 대화 상세 내용을 복구하는 도중 오류가 발생했습니다." }
+          {
+            sender: "ai",
+            text: "⚠️ 대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
+          },
         ]);
       }
     }
@@ -479,24 +527,36 @@ const Home = (): React.JSX.Element => {
     { id: "기업정보", label: "기업정보" },
     { id: "재무제표", label: "재무제표" },
     { id: "최신뉴스", label: "최신뉴스" },
-    { id: "AI종합분석", label: "AI종합분석" }
   ];
 
   // 활성화 탭별 렌더링 매핑
   const renderTabContent = () => {
     switch (activeTab) {
       case "대시보드":
-        return <DashboardTab companyName={selectedCompany} analysisData={analysisData} />;
+        return (
+          <DashboardTab
+            companyName={selectedCompany}
+            analysisData={analysisData}
+          />
+        );
       case "기업정보":
         return <CompanyInfoTab analysisData={analysisData} />;
       case "재무제표":
-        return <FinancialsTab companyName={selectedCompany} analysisData={analysisData} />;
+        return (
+          <FinancialsTab
+            companyName={selectedCompany}
+            analysisData={analysisData}
+          />
+        );
       case "최신뉴스":
         return <NewsTab analysisData={analysisData} />;
-      case "AI종합분석":
-        return <AIAnalysisTab analysisData={analysisData} />;
       default:
-        return <DashboardTab companyName={selectedCompany} analysisData={analysisData} />;
+        return (
+          <DashboardTab
+            companyName={selectedCompany}
+            analysisData={analysisData}
+          />
+        );
     }
   };
 
@@ -535,7 +595,7 @@ const Home = (): React.JSX.Element => {
         />
 
         <div className="flex-1 h-full flex flex-col bg-white overflow-hidden box-border">
-          <div className="flex items-center justify-between border-b border-solid border-[#e2e8f0] px-6 h-14 bg-white shrink-0">
+          <div className="flex items-center justify-between border-b border-solid border-[#e2e8f0] px-6 h-11 bg-white shrink-0">
             <div className="flex gap-6 h-full">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -544,7 +604,9 @@ const Home = (): React.JSX.Element => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`bg-transparent border-none px-1 text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out ${
-                      isActive ? "font-semibold text-[#1a1a1a]" : "font-normal text-[#71717a] hover:text-[#1a1a1a]"
+                      isActive
+                        ? "font-semibold text-[#1a1a1a]"
+                        : "font-normal text-[#71717a] hover:text-[#1a1a1a]"
                     }`}
                   >
                     {tab.label}
@@ -555,7 +617,7 @@ const Home = (): React.JSX.Element => {
                 );
               })}
             </div>
-            
+
             <div className="flex items-center gap-4 text-xs text-[#71717a]">
               <span>{userName}님</span>
               <button
