@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
+import { MarkdownRenderer } from "../common/MarkdownRenderer";
 
 interface Message {
   sender: "user" | "ai";
   text: string;
   isStreaming?: boolean;
+  isStatus?: boolean;
   candidates?: Array<{ corp_name: string; corp_code: string }>;
 }
 
@@ -133,7 +135,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   borderRadius: "12px",
                   backgroundColor: "#f4f4f5",
                   color: "#18181b",
-                  fontSize: "13px",
+                  fontSize: "var(--fs-md)",
                   lineHeight: "1.6",
                   textAlign: "left",
                 }}
@@ -153,7 +155,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                       alignItems: "center",
                       justifyContent: "center",
                       color: "#ffffff",
-                      fontSize: "11px",
+                      fontSize: "var(--fs-xs)",
                       fontWeight: "600",
                       flexShrink: 0,
                     }}
@@ -163,7 +165,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   <div
                     style={{
                       color: "#18181b",
-                      fontSize: "13px",
+                      fontSize: "var(--fs-md)",
                       lineHeight: "1.6",
                       paddingTop: "4px",
                       whiteSpace: "pre-wrap",
@@ -193,7 +195,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                         ))}
                       </div>
                     ) : (
-                      msg.text
+                      <MarkdownRenderer content={msg.text} />
                     )}
                   </div>
                 </div>
@@ -221,7 +223,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                           border: "1px solid #cbd5e1",
                           borderRadius: "100px",
                           padding: "6px 14px",
-                          fontSize: "12px",
+                          fontSize: "var(--fs-sm)",
                           color: "#4f46e5",
                           fontWeight: "600",
                           cursor: "pointer",
@@ -280,7 +282,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
               border: "none",
               backgroundColor: "transparent",
               outline: "none",
-              fontSize: "13px",
+              fontSize: "var(--fs-md)",
               color: "#18181b",
               fontFamily: "'Inter', sans-serif",
             }}

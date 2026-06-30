@@ -1,4 +1,5 @@
 import React from "react";
+import { MarkdownRenderer } from "../../common/MarkdownRenderer";
 
 interface AIAnalysisTabProps {
   analysisData?: {
@@ -37,7 +38,7 @@ const EmptyState: React.FC = () => (
         alignItems: "center",
         justifyContent: "center",
         color: "#94a3b8",
-        fontSize: "11px",
+        fontSize: "var(--fs-xs)",
         fontWeight: "600",
         letterSpacing: "1px"
       }}
@@ -46,10 +47,10 @@ const EmptyState: React.FC = () => (
     </div>
     
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "15px", letterSpacing: "-0.01em" }}>
+      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -72,16 +73,15 @@ const AIAnalysisTab: React.FC<AIAnalysisTabProps> = ({ analysisData }) => {
           padding: "28px",
           border: "1px solid #e3e3e3",
           lineHeight: "1.7",
-          fontSize: "14px",
+          fontSize: "var(--fs-lg)",
           color: "#334155",
-          whiteSpace: "pre-wrap",
           textAlign: "left"
         }}
       >
-        <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: 700, color: "#1f1f1f" }}>
+        <h3 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-xl)", fontWeight: 700, color: "#1f1f1f" }}>
           ✦ AI 종합 분석 리포트
         </h3>
-        {aiAnalysis}
+        <MarkdownRenderer content={aiAnalysis} />
       </div>
     </div>
   );
