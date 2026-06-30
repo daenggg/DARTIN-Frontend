@@ -32,61 +32,18 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 }) => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // 대화 추가 시 자동 스크롤 하단 고정
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
-    <section
-      style={{
-        width: "100%",
-        backgroundColor: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        boxSizing: "border-box",
-        fontFamily: "'Inter', sans-serif",
-      }}
-    >
+    <section className="w-full bg-white flex flex-col h-full box-border font-sans">
       {/* 챗 상단 간결한 토글 트리거 영역 */}
-      <div
-        style={{
-          height: "56px",
-          padding: "0 20px",
-          borderBottom: "1px solid #e2e8f0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          backgroundColor: "#ffffff",
-          boxSizing: "border-box",
-          flexShrink: 0,
-        }}
-      >
+      <div className="h-14 px-5 border-b border-solid border-[#e2e8f0] flex items-center justify-between bg-white shrink-0 box-border">
         <button
           onClick={onToggleSidebar}
           title={isSidebarOpen ? "최근 대화 닫기" : "최근 대화 열기"}
-          style={{
-            border: "1px solid #e4e4e7",
-            borderRadius: "6px",
-            padding: "6px 8px",
-            cursor: "pointer",
-            backgroundColor: "#ffffff",
-            color: "#71717a",
-            transition: "all 0.15s ease",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "32px",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "#f4f4f5";
-            e.currentTarget.style.color = "#18181b";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "#ffffff";
-            e.currentTarget.style.color = "#71717a";
-          }}
+          className="border border-solid border-[#e4e4e7] rounded-md p-1.5 px-2 cursor-pointer bg-white text-[#71717a] transition-all duration-150 flex items-center justify-center h-8 hover:bg-[#f4f4f5] hover:text-[#18181b]"
         >
           <svg
             width="15"
@@ -102,76 +59,26 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <line x1="9" y1="3" x2="9" y2="21"></line>
           </svg>
         </button>
-
       </div>
 
       {/* 대화 피드 */}
-      <div
-        className="custom-scrollbar"
-        style={{
-          flex: 1,
-          padding: "24px 20px",
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
-          backgroundColor: "#ffffff",
-        }}
-      >
+      <div className="custom-scrollbar flex-1 p-6 px-5 overflow-y-auto flex flex-col gap-6 bg-white">
         {messages.map((msg, index) => (
           <div
             key={index}
-            style={{
-              display: "flex",
-              justifyContent: msg.sender === "user" ? "flex-end" : "flex-start",
-              width: "100%",
-            }}
+            className={`flex w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
           >
             {msg.sender === "user" ? (
-              <div
-                style={{
-                  maxWidth: "85%",
-                  padding: "10px 16px",
-                  borderRadius: "12px",
-                  backgroundColor: "#f4f4f5",
-                  color: "#18181b",
-                  fontSize: "var(--fs-md)",
-                  lineHeight: "1.6",
-                  textAlign: "left",
-                }}
-              >
+              <div className="max-w-[85%] py-2.5 px-4 rounded-xl bg-[#f4f4f5] text-[#18181b] text-md leading-relaxed text-left">
                 {msg.text}
               </div>
             ) : (
-              <div style={{ display: "flex", gap: "12px", maxWidth: "90%", flexDirection: "column" }}>
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <div
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "6px",
-                      backgroundColor: "#18181b",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#ffffff",
-                      fontSize: "var(--fs-xs)",
-                      fontWeight: "600",
-                      flexShrink: 0,
-                    }}
-                  >
+              <div className="flex gap-3 max-w-[90%] flex-col">
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded bg-[#18181b] flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     AI
                   </div>
-                  <div
-                    style={{
-                      color: "#18181b",
-                      fontSize: "var(--fs-md)",
-                      lineHeight: "1.6",
-                      paddingTop: "4px",
-                      whiteSpace: "pre-wrap",
-                      textAlign: "left",
-                    }}
-                  >
+                  <div className="text-[#18181b] text-md leading-relaxed pt-1 whitespace-pre-wrap text-left flex-1">
                     <style>{`
                       @keyframes wordWave {
                         0%, 100% { transform: translateY(0); }
@@ -179,7 +86,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                       }
                     `}</style>
                     {msg.isStatus ? (
-                      <div style={{ display: "inline-flex", flexWrap: "wrap", color: "#71717a", fontWeight: "500" }}>
+                      <div className="inline-flex flex-wrap text-[#71717a] font-medium">
                         {msg.text.split("").map((char, index) => (
                           <span
                             key={index}
@@ -202,42 +109,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
                 {/* 기업 후보군 카드식 알약 버튼 렌더링 */}
                 {msg.candidates && msg.candidates.length > 0 && (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                      marginLeft: "40px",
-                      marginTop: "4px",
-                    }}
-                  >
+                  <div className="flex flex-wrap gap-2 ml-10 mt-1">
                     {msg.candidates.map((cand, idx) => (
                       <button
                         key={idx}
                         onClick={() => onSelectCandidate(cand.corp_code, cand.corp_name)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          backgroundColor: "#ffffff",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: "100px",
-                          padding: "6px 14px",
-                          fontSize: "var(--fs-sm)",
-                          color: "#4f46e5",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f3ff";
-                          e.currentTarget.style.borderColor = "#818cf8";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = "#ffffff";
-                          e.currentTarget.style.borderColor = "#cbd5e1";
-                        }}
+                        className="flex items-center gap-1.5 bg-white border border-solid border-[#cbd5e1] rounded-full py-1.5 px-3.5 text-sm text-[#4f46e5] font-semibold cursor-pointer transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-[#f5f3ff] hover:border-[#818cf8]"
                       >
                         🏢 {cand.corp_name}
                       </button>
@@ -254,57 +131,20 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       {/* 입력창 */}
       <form
         onSubmit={onSendMessage}
-        style={{
-          padding: "16px 20px",
-          backgroundColor: "#ffffff",
-          borderTop: "1px solid #f4f4f5",
-        }}
+        className="p-4 px-5 bg-white border-t border-solid border-[#f4f4f5]"
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            backgroundColor: "#ffffff",
-            borderRadius: "6px",
-            padding: "8px 14px",
-            gap: "12px",
-            transition: "all 0.15s ease",
-            border: "1px solid #cbd5e1",
-          }}
-        >
+        <div className="flex items-center bg-white rounded-md p-2 px-3.5 gap-3 transition-colors duration-150 border border-solid border-[#cbd5e1] focus-within:border-black">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
             placeholder={companyName === "새 문서" ? "분석할 기업명을 입력하세요..." : "추가 질문을 입력하세요..."}
-            style={{
-              flex: 1,
-              border: "none",
-              backgroundColor: "transparent",
-              outline: "none",
-              fontSize: "var(--fs-md)",
-              color: "#18181b",
-              fontFamily: "'Inter', sans-serif",
-            }}
+            className="flex-1 border-none bg-transparent outline-none text-md text-[#18181b] font-sans"
           />
           <button
             type="submit"
             title="전송"
-            style={{
-              border: "none",
-              background: "none",
-              color: "#18181b",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "6px",
-              borderRadius: "4px",
-              backgroundColor: "#f4f4f5",
-              transition: "all 0.15s ease",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e4e4e7")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
+            className="border-none bg-transparent text-[#18181b] cursor-pointer flex items-center justify-center p-1.5 rounded bg-[#f4f4f5] transition-colors duration-150 hover:bg-[#e4e4e7]"
           >
             <svg
               width="14"

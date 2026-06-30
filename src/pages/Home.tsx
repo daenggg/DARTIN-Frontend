@@ -501,23 +501,7 @@ const Home = (): React.JSX.Element => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "#fcfcfc",
-        fontFamily: "'Inter', sans-serif",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflow: "hidden",
-        boxSizing: "border-box",
-        color: "#1a1a1a"
-      }}
-    >
+    <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen flex bg-[#fcfcfc] font-sans overflow-hidden box-border text-[#1a1a1a]">
       <ChatHistorySidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -526,16 +510,10 @@ const Home = (): React.JSX.Element => {
       />
 
       <div
-        style={{
-          display: "flex",
-          flex: 1,
-          height: "100%",
-          overflow: "hidden",
-          boxSizing: "border-box",
-          userSelect: isResizing ? "none" : "auto",
-        }}
+        className="flex flex-1 h-full overflow-hidden box-border"
+        style={{ userSelect: isResizing ? "none" : "auto" }}
       >
-        <div style={{ width: `${leftWidth}px`, flexShrink: 0, height: "100%" }}>
+        <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full">
           <ChatArea
             messages={messages}
             inputValue={inputValue}
@@ -551,119 +529,45 @@ const Home = (): React.JSX.Element => {
         {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
         <div
           onMouseDown={handleMouseDown}
-          style={{
-            width: "5px",
-            cursor: "col-resize",
-            backgroundColor: isResizing ? "#3b82f6" : "transparent",
-            borderLeft: "1px solid #e2e8f0",
-            transition: "background-color 0.15s ease",
-            height: "100%",
-            flexShrink: 0,
-            zIndex: 10,
-            userSelect: "none",
-          }}
+          className={`w-[5px] cursor-col-resize border-l border-solid border-l-[#e2e8f0] transition-colors duration-150 h-full shrink-0 z-10 select-none ${
+            isResizing ? "bg-blue-500" : "bg-transparent"
+          }`}
         />
 
-        <div
-          style={{
-            flex: 1,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#ffffff",
-            overflow: "hidden",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderBottom: "1px solid #e2e8f0",
-              padding: "0 24px",
-              height: "56px",
-              backgroundColor: "#ffffff",
-              flexShrink: 0
-            }}
-          >
-            <div style={{ display: "flex", gap: "24px", height: "100%" }}>
+        <div className="flex-1 h-full flex flex-col bg-white overflow-hidden box-border">
+          <div className="flex items-center justify-between border-b border-solid border-[#e2e8f0] px-6 h-14 bg-white shrink-0">
+            <div className="flex gap-6 h-full">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      padding: "0 4px",
-                      fontSize: "13px",
-                      fontWeight: isActive ? "600" : "400",
-                      color: isActive ? "#1a1a1a" : "#71717a",
-                      cursor: "pointer",
-                      height: "100%",
-                      position: "relative",
-                      display: "flex",
-                      alignItems: "center",
-                      transition: "color 0.15s ease-out"
-                    }}
+                    className={`bg-transparent border-none px-1 text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out ${
+                      isActive ? "font-semibold text-[#1a1a1a]" : "font-normal text-[#71717a] hover:text-[#1a1a1a]"
+                    }`}
                   >
                     {tab.label}
                     {isActive && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: "2px",
-                          backgroundColor: "#1a1a1a"
-                        }}
-                      />
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1a1a1a]" />
                     )}
                   </button>
                 );
               })}
             </div>
             
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "12px", color: "#71717a" }}>
+            <div className="flex items-center gap-4 text-xs text-[#71717a]">
               <span>{userName}님</span>
               <button
                 onClick={handleLogout}
-                style={{
-                  border: "1px solid #e2e8f0",
-                  backgroundColor: "transparent",
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  color: "#71717a",
-                  transition: "all 0.15s ease"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = "#cbd5e1";
-                  e.currentTarget.style.color = "#1a1a1a";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                  e.currentTarget.style.color = "#71717a";
-                }}
+                className="border border-solid border-[#e2e8f0] bg-transparent py-1 px-2.5 rounded text-xs text-[#71717a] cursor-pointer transition-colors duration-150 hover:border-[#cbd5e1] hover:text-[#1a1a1a]"
               >
                 로그아웃
               </button>
             </div>
           </div>
 
-          <main
-            style={{
-              flex: 1,
-              padding: "24px 32px",
-              overflowY: "auto",
-              boxSizing: "border-box"
-            }}
-            className="custom-scrollbar"
-          >
+          <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
             {renderTabContent()}
           </main>
         </div>

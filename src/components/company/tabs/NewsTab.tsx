@@ -14,49 +14,16 @@ interface NewsTabProps {
 }
 
 const EmptyState: React.FC = () => (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "120px 24px",
-      backgroundColor: "#ffffff",
-      borderRadius: "12px",
-      border: "1px solid #f1f5f9",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)",
-      color: "#475569",
-      textAlign: "center",
-      gap: "24px",
-      fontFamily: "'Inter', sans-serif",
-      width: "100%",
-      boxSizing: "border-box"
-    }}
-  >
-    <div
-      style={{
-        width: "64px",
-        height: "64px",
-        borderRadius: "50%",
-        backgroundColor: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#94a3b8",
-        fontSize: "var(--fs-xs)",
-        fontWeight: "600",
-        letterSpacing: "1px"
-      }}
-    >
+  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white rounded-xl border border-solid border-[#f1f5f9] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_10px_30px_rgba(0,0,0,0.02)] text-[#475569] text-center gap-6 font-sans w-full box-border">
+    <div className="w-16 h-16 rounded-full bg-[#f8fafc] border border-solid border-[#e2e8f0] flex items-center justify-center text-[#94a3b8] text-xs font-semibold tracking-wider">
       NEWS
     </div>
     
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
+    <div className="flex flex-col gap-2">
+      <div className="font-semibold text-[#0f172a] text-lg tracking-tight">
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div className="text-sm leading-relaxed text-[#64748b] max-w-[360px] mx-auto">
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -89,9 +56,9 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "'Inter', sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-        <h3 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+    <div className="flex flex-col gap-4 font-sans">
+      <div className="flex justify-between items-center mb-1">
+        <h3 className="m-0 text-lg font-bold text-[#18181b] text-left">
           관련 언론사 뉴스 리포트
         </h3>
       </div>
@@ -100,68 +67,26 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
         <div
           key={idx}
           onClick={() => window.open(news.url, "_blank")}
-          style={{
-            backgroundColor: "#ffffff",
-            borderRadius: "8px",
-            padding: "20px 24px",
-            border: "1px solid #e4e4e7",
-            display: "flex",
-            gap: "20px",
-            alignItems: "center",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.borderColor = "#a1a1aa")}
-          onMouseOut={(e) => (e.currentTarget.style.borderColor = "#e4e4e7")}
+          className="bg-white rounded-lg p-5 border border-solid border-[#e4e4e7] flex gap-5 items-center cursor-pointer transition-colors duration-150 hover:border-[#a1a1aa]"
         >
-          <div
-            style={{
-              width: "80px",
-              height: "80px",
-              backgroundColor: "#e2e8f0",
-              backgroundImage: "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "var(--fs-3xl)",
-              flexShrink: 0,
-              border: "1px solid #cbd5e1",
-              boxSizing: "border-box",
-            }}
-          >
+          <div className="w-20 h-20 bg-gradient-to-br from-[#e2e8f0] to-[#cbd5e1] rounded-md flex items-center justify-center text-3xl shrink-0 border border-solid border-[#cbd5e1] box-border">
             📰
           </div>
 
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+          <div className="flex-1 flex flex-col items-start text-left">
+            <div className="flex items-center gap-2 mb-2">
               <span
-                style={{
-                  fontSize: "var(--fs-xs)",
-                  fontWeight: "700",
-                  color: news.color,
-                  backgroundColor: news.bgColor,
-                  padding: "3px 8px",
-                  borderRadius: "4px",
-                }}
+                style={{ color: news.color, backgroundColor: news.bgColor }}
+                className="text-xs font-bold py-1 px-2 rounded"
               >
                 {news.category}
               </span>
-              <span style={{ fontSize: "var(--fs-sm)", color: "#71717a" }}>{news.press}</span>
+              <span className="text-sm text-[#71717a]">{news.press}</span>
             </div>
-            <h4
-              style={{
-                margin: "0 0 6px 0",
-                fontSize: "var(--fs-lg)",
-                fontWeight: "700",
-                color: "#18181b",
-                lineHeight: "1.4",
-                textAlign: "left",
-              }}
-            >
+            <h4 className="m-0 mb-1.5 text-lg font-bold text-[#18181b] leading-snug text-left">
               {news.title}
             </h4>
-            <p style={{ margin: 0, fontSize: "var(--fs-sm)", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
+            <p className="m-0 text-sm text-[#71717a] leading-relaxed text-left">
               {news.desc}
             </p>
           </div>

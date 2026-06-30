@@ -1,3 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  /* Font Sizing Variables */
+  --text-xs: 13px;
+  --text-sm: 14.5px;
+  --text-md: 15.5px;
+  --text-lg: 17.5px;
+  --text-xl: 19px;
+  --text-2xl: 20.5px;
+  --text-3xl: 23px;
+  --text-4xl: 27px;
+  --text-5xl: 31px;
+  --text-6xl: 40px;
+  --text-7xl: 60px;
+
+  /* Color Variables */
+  --color-brand-text: #6b6375;
+  --color-brand-heading: #08060d;
+  --color-brand-bg: #ffffff;
+  --color-brand-border: #e5e4e7;
+  --color-brand-code-bg: #f4f3ec;
+  --color-brand-accent: #aa3bff;
+  --color-brand-accent-bg: rgba(170, 59, 255, 0.1);
+  --color-brand-accent-border: rgba(170, 59, 255, 0.5);
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;

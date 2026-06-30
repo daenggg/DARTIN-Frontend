@@ -37,49 +37,16 @@ interface DashboardTabProps {
 }
 
 const EmptyState: React.FC = () => (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "120px 24px",
-      backgroundColor: "#ffffff",
-      borderRadius: "12px",
-      border: "1px solid #f1f5f9",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)",
-      color: "#475569",
-      textAlign: "center",
-      gap: "24px",
-      fontFamily: "'Inter', sans-serif",
-      width: "100%",
-      boxSizing: "border-box"
-    }}
-  >
-    <div
-      style={{
-        width: "64px",
-        height: "64px",
-        borderRadius: "50%",
-        backgroundColor: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#94a3b8",
-        fontSize: "var(--fs-xs)",
-        fontWeight: "600",
-        letterSpacing: "1px"
-      }}
-    >
+  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white rounded-xl border border-solid border-[#f1f5f9] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_10px_30px_rgba(0,0,0,0.02)] text-[#475569] text-center gap-6 font-sans w-full box-border">
+    <div className="w-16 h-16 rounded-full bg-[#f8fafc] border border-solid border-[#e2e8f0] flex items-center justify-center text-[#94a3b8] text-xs font-semibold tracking-wider">
       ANALYSIS
     </div>
     
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
+    <div className="flex flex-col gap-2">
+      <div className="font-semibold text-[#0f172a] text-lg tracking-tight">
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div className="text-sm leading-relaxed text-[#64748b] max-w-[360px] mx-auto">
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -123,65 +90,31 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
     : "실시간 분석 진행 완료. 분석 탭에서 마크다운 리포트를 확인하실 수 있습니다.";
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-        fontFamily: "'Inter', sans-serif",
-        boxSizing: "border-box",
-        width: "100%",
-      }}
-    >
+    <div className="flex flex-col gap-5 font-sans w-full box-border">
       {/* 상단 2분할 레이아웃 */}
-      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", width: "100%" }}>
+      <div className="flex gap-5 flex-wrap w-full">
         {/* 좌측 영역 */}
-        <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div className="flex-1 min-w-[320px] flex flex-col gap-5">
           {/* 기업 정보 카드 */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "6px",
-              padding: "24px",
-              border: "1px solid #e4e4e7",
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              flex: 1,
-              boxSizing: "border-box",
-              justifyContent: "space-between",
-            }}
-          >
+          <div className="bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] flex flex-col gap-5 flex-1 box-border justify-between">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "6px",
-                    border: "1px solid #e4e4e7",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "#f5f3ff",
-                    fontWeight: "bold",
-                  }}
-                >
-                  <div style={{ color: "#4f46e5", fontSize: "var(--fs-xs)" }}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-md border border-solid border-[#e4e4e7] flex items-center justify-center bg-[#f5f3ff] font-bold">
+                  <div className="text-[#4f46e5] text-xs">
                     {basic.isListed ? basic.stockMarket || "KOSPI" : "CORP"}
                   </div>
                 </div>
-                <div style={{ textAlign: "left" }}>
-                  <h3 style={{ margin: 0, fontSize: "var(--fs-2xl)", fontWeight: "700", color: "#18181b" }}>
+                <div className="text-left">
+                  <h3 className="m-0 text-2xl font-bold text-[#18181b]">
                     {basic.companyName}
                   </h3>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-sm)", color: "#71717a" }}>
+                  <p className="mt-1 text-sm text-[#71717a] m-0">
                     {basic.industry || "정보 없음"}
                   </p>
                 </div>
               </div>
 
-              <div style={{ marginTop: "16px", fontSize: "var(--fs-sm)", color: "#4b5563", display: "flex", flexDirection: "column", gap: "4px", textAlign: "left" }}>
+              <div className="mt-4 text-sm text-[#4b5563] flex flex-col gap-1 text-left">
                 <div><strong>대표이사:</strong> {basic.ceo}</div>
                 <div><strong>본사 주소:</strong> {basic.address}</div>
                 <div><strong>설립연도:</strong> {basic.establishedYear}년</div>
@@ -190,52 +123,22 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
             </div>
 
             {analysisData.jobLinks && (
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "16px" }}>
+              <div className="flex gap-2 flex-wrap mt-4">
                 <button
                   onClick={() => window.open(analysisData.jobLinks!.saramin, "_blank")}
-                  style={{
-                    border: "1px solid #e4e4e7",
-                    borderRadius: "6px",
-                    padding: "6px 12px",
-                    fontSize: "var(--fs-xs)",
-                    fontWeight: "500",
-                    color: "#18181b",
-                    backgroundColor: "#ffffff",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
+                  className="border border-solid border-[#e4e4e7] rounded-md py-1.5 px-3 text-xs font-semibold text-[#18181b] bg-white cursor-pointer transition-colors duration-150 hover:bg-slate-50"
                 >
                   사람인 공고
                 </button>
                 <button
                   onClick={() => window.open(analysisData.jobLinks!.wanted, "_blank")}
-                  style={{
-                    border: "1px solid #e4e4e7",
-                    borderRadius: "6px",
-                    padding: "6px 12px",
-                    fontSize: "var(--fs-xs)",
-                    fontWeight: "500",
-                    color: "#18181b",
-                    backgroundColor: "#ffffff",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
+                  className="border border-solid border-[#e4e4e7] rounded-md py-1.5 px-3 text-xs font-semibold text-[#18181b] bg-white cursor-pointer transition-colors duration-150 hover:bg-slate-50"
                 >
                   원티드 공고
                 </button>
                 <button
                   onClick={() => window.open(analysisData.jobLinks!.work24, "_blank")}
-                  style={{
-                    border: "1px solid #e4e4e7",
-                    borderRadius: "6px",
-                    padding: "6px 12px",
-                    fontSize: "var(--fs-xs)",
-                    fontWeight: "500",
-                    color: "#18181b",
-                    backgroundColor: "#ffffff",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
+                  className="border border-solid border-[#e4e4e7] rounded-md py-1.5 px-3 text-xs font-semibold text-[#18181b] bg-white cursor-pointer transition-colors duration-150 hover:bg-slate-50"
                 >
                   워크24 공고
                 </button>
@@ -244,59 +147,21 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
           </div>
 
           {/* 재무제표 요약 카드 */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "6px",
-              padding: "24px",
-              border: "1px solid #e4e4e7",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-              flex: 1,
-              boxSizing: "border-box",
-            }}
-          >
-            <h4 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+          <div className="bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] flex flex-col gap-4 flex-1 box-border">
+            <h4 className="m-0 text-lg font-bold text-[#18181b] text-left">
               최근 실적 요약 ({latestYear ? `${latestYear}년` : ""})
             </h4>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", flex: 1, alignItems: "center" }}>
-              <div
-                style={{
-                  padding: "12px",
-                  backgroundColor: "#f4f4f5",
-                  borderRadius: "6px",
-                  border: "1px solid #e4e4e7",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  boxSizing: "border-box",
-                  alignItems: "flex-start"
-                }}
-              >
-                <span style={{ fontSize: "var(--fs-xs)", color: "#71717a" }}>매출액</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xl)", fontWeight: "700", color: "#18181b" }}>
+            <div className="grid grid-cols-2 gap-4 flex-1 items-center">
+              <div className="p-3 bg-[#f4f4f5] rounded-md border border-solid border-[#e4e4e7] h-full flex flex-col justify-center box-border items-start">
+                <span className="text-xs text-[#71717a]">매출액</span>
+                <p className="m-0 mt-1 text-xl font-bold text-[#18181b]">
                   {revenueStr}
                 </p>
               </div>
-              <div
-                style={{
-                  padding: "12px",
-                  backgroundColor: "#f4f4f5",
-                  borderRadius: "6px",
-                  border: "1px solid #e4e4e7",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  boxSizing: "border-box",
-                  alignItems: "flex-start"
-                }}
-              >
-                <span style={{ fontSize: "var(--fs-xs)", color: "#71717a" }}>영업이익</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xl)", fontWeight: "700", color: "#4f46e5" }}>
+              <div className="p-3 bg-[#f4f4f5] rounded-md border border-solid border-[#e4e4e7] h-full flex flex-col justify-center box-border items-start">
+                <span className="text-xs text-[#71717a]">영업이익</span>
+                <p className="m-0 mt-1 text-xl font-bold text-[#4f46e5]">
                   {opProfitStr}
                 </p>
               </div>
@@ -305,97 +170,33 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
         </div>
 
         {/* 우측 영역 - 최신 뉴스 */}
-        <div
-          style={{
-            flex: "1.2 1 320px",
-            backgroundColor: "#ffffff",
-            borderRadius: "6px",
-            padding: "24px",
-            border: "1px solid #e4e4e7",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-            boxSizing: "border-box",
-          }}
-        >
-          <h4 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+        <div className="flex-[1.2] min-w-[320px] bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] flex flex-col gap-5 box-border">
+          <h4 className="m-0 text-lg font-bold text-[#18181b] text-left">
             최신 관련 뉴스
           </h4>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1, justifyContent: "space-between" }}>
+          <div className="flex flex-col gap-3 flex-1 justify-between">
             {mappedNews.length === 0 ? (
-              <div style={{ fontSize: "var(--fs-sm)", color: "#71717a", padding: "24px 0", textAlign: "center" }}>수집된 뉴스가 없습니다.</div>
+              <div className="text-sm text-[#71717a] py-6 text-center">수집된 뉴스가 없습니다.</div>
             ) : (
               mappedNews.slice(0, 3).map((news, idx) => (
                 <div
                   key={idx}
                   onClick={() => window.open(news.url, "_blank")}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    padding: "12px",
-                    backgroundColor: "#f4f4f5",
-                    border: "1px solid #e4e4e7",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    flex: 1,
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
+                  className="flex flex-row p-3 bg-[#f4f4f5] border border-solid border-[#e4e4e7] rounded-md cursor-pointer transition-colors duration-150 hover:border-[#a1a1aa] flex-1 items-center gap-3"
                 >
-                  <div
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      backgroundColor: "#e2e8f0",
-                      backgroundImage: "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)",
-                      borderRadius: "4px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "var(--fs-lg)",
-                      flexShrink: 0,
-                      border: "1px solid #cbd5e1",
-                      boxSizing: "border-box",
-                    }}
-                  >
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#e2e8f0] to-[#cbd5e1] rounded flex items-center justify-center text-lg shrink-0 border border-solid border-[#cbd5e1] box-border">
                     📰
                   </div>
 
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }}>
-                    <span style={{ fontSize: "var(--fs-xs)", color: "#71717a", marginBottom: "4px" }}>
+                  <div className="flex-1 flex flex-col items-start text-left">
+                    <span className="text-xs text-[#71717a] mb-1">
                       {news.press} • {news.time}
                     </span>
-                    <h5
-                      style={{
-                        margin: "0 0 4px 0",
-                        fontSize: "var(--fs-sm)",
-                        fontWeight: "700",
-                        color: "#1a73e8",
-                        lineHeight: "1.4",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
+                    <h5 className="m-0 mb-1 text-sm font-bold text-[#1a73e8] leading-snug line-clamp-1">
                       {news.title}
                     </h5>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: "var(--fs-xs)",
-                        color: "#71717a",
-                        lineHeight: "1.5",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
+                    <p className="m-0 text-xs text-[#71717a] leading-normal line-clamp-2">
                       {news.desc}
                     </p>
                   </div>
@@ -407,28 +208,16 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
       </div>
 
       {/* 하단 영역: AI 종합 분석 */}
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "6px",
-          padding: "24px",
-          border: "1px solid #e4e4e7",
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <h4 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+      <div className="bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] flex flex-col gap-5 w-full box-border">
+        <h4 className="m-0 text-lg font-bold text-[#18181b] text-left">
           AI 종합 분석 피드백
         </h4>
 
-        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-          <span style={{ fontSize: "var(--fs-sm)", color: "#18181b", fontWeight: "700", flexShrink: 0 }}>
+        <div className="flex gap-2.5 items-start">
+          <span className="text-sm text-[#18181b] font-bold shrink-0">
             ✦
           </span>
-          <span style={{ fontSize: "var(--fs-sm)", color: "#71717a", lineHeight: "1.5", whiteSpace: "pre-wrap", textAlign: "left" }}>
+          <span className="text-sm text-[#71717a] leading-relaxed whitespace-pre-wrap text-left">
             {aiFeedbackText}
           </span>
         </div>

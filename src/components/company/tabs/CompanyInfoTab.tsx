@@ -16,49 +16,16 @@ interface CompanyInfoTabProps {
 }
 
 const EmptyState: React.FC = () => (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "120px 24px",
-      backgroundColor: "#ffffff",
-      borderRadius: "12px",
-      border: "1px solid #f1f5f9",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)",
-      color: "#475569",
-      textAlign: "center",
-      gap: "24px",
-      fontFamily: "'Inter', sans-serif",
-      width: "100%",
-      boxSizing: "border-box"
-    }}
-  >
-    <div
-      style={{
-        width: "64px",
-        height: "64px",
-        borderRadius: "50%",
-        backgroundColor: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#94a3b8",
-        fontSize: "var(--fs-xs)",
-        fontWeight: "600",
-        letterSpacing: "1px"
-      }}
-    >
+  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white rounded-xl border border-solid border-[#f1f5f9] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_10px_30px_rgba(0,0,0,0.02)] text-[#475569] text-center gap-6 font-sans w-full box-border">
+    <div className="w-16 h-16 rounded-full bg-[#f8fafc] border border-solid border-[#e2e8f0] flex items-center justify-center text-[#94a3b8] text-xs font-semibold tracking-wider">
       PROFILE
     </div>
     
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
+    <div className="flex flex-col gap-2">
+      <div className="font-semibold text-[#0f172a] text-lg tracking-tight">
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div className="text-sm leading-relaxed text-[#64748b] max-w-[360px] mx-auto">
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -82,50 +49,31 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+    <div className="flex flex-col gap-6 font-sans">
       {/* 상세 개요 카드 */}
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "8px",
-          padding: "24px",
-          border: "1px solid #e4e4e7",
-        }}
-      >
-        <h3 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b", textAlign: "left" }}>
+      <div className="bg-white rounded-lg p-6 border border-solid border-[#e4e4e7]">
+        <h3 className="m-0 mb-5 text-lg font-bold text-[#18181b] text-left">
           기업 기본 정보
         </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+        <div className="grid grid-cols-2 gap-5">
           {infoItems.map((item, idx) => (
             <div
               key={idx}
-              style={{
-                display: "flex",
-                borderBottom: "1px solid #f4f4f5",
-                paddingBottom: "12px",
-                fontSize: "var(--fs-md)",
-              }}
+              className="flex border-b border-solid border-[#f4f4f5] pb-3 text-md"
             >
-              <span style={{ width: "140px", color: "#71717a", fontWeight: "500", textAlign: "left" }}>{item.label}</span>
-              <span style={{ color: "#18181b", fontWeight: "600", textAlign: "left" }}>{item.value}</span>
+              <span className="w-[140px] text-[#71717a] font-semibold text-left">{item.label}</span>
+              <span className="text-[#18181b] font-bold text-left">{item.value}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* 비전 및 핵심 가치 */}
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "8px",
-          padding: "24px",
-          border: "1px solid #e4e4e7",
-        }}
-      >
-        <h3 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b", textAlign: "left" }}>
+      <div className="bg-white rounded-lg p-6 border border-solid border-[#e4e4e7]">
+        <h3 className="m-0 mb-5 text-lg font-bold text-[#18181b] text-left">
           핵심 기업 비전
         </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+        <div className="grid grid-cols-3 gap-4">
           {[
             {
               title: "We Do Technology",
@@ -142,17 +90,12 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
           ].map((card, idx) => (
             <div
               key={idx}
-              style={{
-                backgroundColor: "#f4f4f5",
-                padding: "20px",
-                borderRadius: "6px",
-                border: "1px solid #e4e4e7",
-              }}
+              className="bg-[#f4f4f5] p-5 rounded-md border border-solid border-[#e4e4e7]"
             >
-              <h4 style={{ margin: "0 0 10px 0", fontSize: "var(--fs-md)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+              <h4 className="m-0 mb-2.5 text-md font-bold text-[#18181b] text-left">
                 {card.title}
               </h4>
-              <p style={{ margin: 0, fontSize: "var(--fs-sm)", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
+              <p className="m-0 text-sm text-[#71717a] leading-relaxed text-left">
                 {card.desc}
               </p>
             </div>

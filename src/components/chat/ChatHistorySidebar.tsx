@@ -67,7 +67,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       await axios.delete(`${BACKEND_URL}/api/chat/sessions/${id}`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" }
       });
-      // 리스트 갱신
       setSessions(prev => prev.filter(s => s.sessionId !== id));
       if (activeSessionId === id) {
         onSelectHistory("New", "새 문서");
@@ -82,20 +81,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   const handleItemClick = (id: string, companyName: string) => {
     onSelectHistory(id, companyName);
     onClose();
-  };
-
-  const dropdownItemStyle: React.CSSProperties = {
-    padding: "6px 8px",
-    border: "none",
-    backgroundColor: "transparent",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "var(--fs-xs)",
-    fontWeight: "400",
-    color: "#18181b",
-    textAlign: "left",
-    width: "100%",
-    transition: "background-color 0.15s",
   };
 
   const sortedSessions = [...sessions].sort((a, b) => {
@@ -114,115 +99,49 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       {isOpen && (
         <div
           onClick={onClose}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.05)",
-            zIndex: 999,
-          }}
+          className="fixed top-0 left-0 w-screen h-screen bg-black/5 z-[999]"
         />
       )}
 
       <aside
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
           width: isOpen ? "280px" : "0px",
           opacity: isOpen ? 1 : 0,
-          overflow: "hidden",
-          height: "100vh",
-          backgroundColor: "#ffffff",
           borderRight: isOpen ? "1px solid #cbd5e1" : "none",
-          transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 1000,
-          boxSizing: "border-box",
-          fontFamily: "'Inter', sans-serif",
           boxShadow: isOpen ? "4px 0 24px rgba(0, 0, 0, 0.08)" : "none",
         }}
+        className="fixed top-0 left-0 h-screen bg-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col z-[1000] box-border font-sans overflow-hidden"
       >
         {/* 헤더 및 닫기 버튼 */}
-        <div
-          style={{
-            padding: "20px 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span style={{ fontWeight: "700", fontSize: "var(--fs-lg)", color: "#1f1f1f" }}>
+        <div className="p-5 px-6 flex justify-between items-center whitespace-nowrap">
+          <span className="font-bold text-lg text-[#1f1f1f]">
             최근 분석 목록
           </span>
           <button
             onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#5f6368",
-              cursor: "pointer",
-              fontSize: "16px",
-              fontWeight: "bold",
-              padding: "4px 8px",
-              borderRadius: "50%",
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f0f4f9")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            className="bg-transparent border-none text-[#5f6368] cursor-pointer text-xl font-bold p-1 px-2 rounded-full transition-colors duration-200 hover:bg-[#f0f4f9]"
           >
             ✕
           </button>
         </div>
 
         {/* 새 대화 버튼 */}
-        <div style={{ padding: "0 16px 16px 16px", whiteSpace: "nowrap" }}>
+        <div className="p-4 pt-0 whitespace-nowrap">
           <button
             onClick={() => {
               onSelectHistory("New", "새 문서");
               onClose();
             }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              width: "100%",
-              padding: "10px 0",
-              backgroundColor: "#f0f4f9",
-              border: "1px solid #cbd5e1",
-              borderRadius: "100px",
-              color: "#1f1f1f",
-              fontWeight: "600",
-              fontSize: "var(--fs-md)",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e3e3e3")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f0f4f9")}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#f0f4f9] border border-solid border-[#cbd5e1] rounded-full text-[#1f1f1f] font-semibold text-md cursor-pointer transition-all duration-200 hover:bg-[#e3e3e3]"
           >
             <span>+</span> 새 분석 요청
           </button>
         </div>
 
         {/* 히스토리 목록 */}
-        <div
-          className="custom-scrollbar"
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "0 12px 16px 12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-          }}
-        >
+        <div className="custom-scrollbar flex-1 overflow-y-auto px-3 pb-4 flex flex-col gap-0.5">
           {sortedSessions.length === 0 ? (
-            <div style={{ fontSize: "var(--fs-xs)", color: "#a1a1aa", padding: "24px 0", textAlign: "center" }}>
+            <div className="text-xs text-[#a1a1aa] py-6 text-center">
               분석 이력이 존재하지 않습니다.
             </div>
           ) : (
@@ -237,79 +156,24 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   onClick={() => handleItemClick(item.sessionId, item.companyName)}
                   onMouseEnter={() => setHoveredId(item.sessionId)}
                   onMouseLeave={() => setHoveredId(null)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    backgroundColor: isActive ? "#f4f4f5" : "transparent",
-                    borderLeft: isActive ? "3px solid #18181b" : "3px solid transparent",
-                    paddingLeft: isActive ? "9px" : "12px",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    whiteSpace: "nowrap",
-                    fontSize: "var(--fs-sm)",
-                    fontWeight: isActive ? "600" : "400",
-                    color: isActive ? "#18181b" : "#71717a",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "6px",
-                    position: "relative",
-                  }}
-                  onMouseOver={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = "#fafafa";
-                      e.currentTarget.style.color = "#18181b";
-                      e.currentTarget.style.borderLeftColor = "#e4e4e7";
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.color = "#71717a";
-                      e.currentTarget.style.borderLeftColor = "transparent";
-                    }
-                  }}
+                  className={`p-2 px-3 rounded-md cursor-pointer transition-all duration-150 flex items-center justify-between gap-1.5 relative border-l-[3px] border-solid ${
+                    isActive
+                      ? "bg-[#f4f4f5] border-l-[#18181b] text-[#18181b] font-semibold pl-2.5"
+                      : "border-l-transparent text-[#71717a] font-normal hover:bg-[#fafafa] hover:text-[#18181b] hover:border-l-[#e4e4e7]"
+                  }`}
                 >
-                  <span
-                    style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      flex: 1,
-                      textAlign: "left"
-                    }}
-                  >
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap flex-1 text-left">
                     {item.companyName}
                   </span>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     {isHovered ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveMenuId(activeMenuId === item.sessionId ? null : item.sessionId);
                         }}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "2px 4px",
-                          borderRadius: "4px",
-                          fontSize: "var(--fs-sm)",
-                          color: "#71717a",
-                          transition: "all 0.15s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = "#e4e4e7";
-                          e.currentTarget.style.color = "#18181b";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                          e.currentTarget.style.color = "#71717a";
-                        }}
+                        className="bg-transparent border-none cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded text-sm text-[#71717a] transition-all duration-150 hover:bg-[#e4e4e7] hover:text-[#18181b]"
                       >
                         ⋮
                       </button>
@@ -322,7 +186,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           fill="#18181b"
                           stroke="#71717a"
                           strokeWidth="2"
-                          style={{ flexShrink: 0 }}
+                          className="shrink-0"
                         >
                           <line x1="18" y1="8" x2="22" y2="12"></line>
                           <line x1="12" y1="2" x2="22" y2="12"></line>
@@ -334,31 +198,13 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
                   {/* 드롭다운 메뉴 */}
                   {activeMenuId === item.sessionId && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: "12px",
-                        top: "28px",
-                        backgroundColor: "#ffffff",
-                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-                        borderRadius: "6px",
-                        padding: "4px",
-                        zIndex: 1010,
-                        width: "100px",
-                        border: "1px solid #e4e4e7",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "2px",
-                      }}
-                    >
+                    <div className="absolute right-3 top-7 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] rounded-md p-1 z-[1010] w-[100px] border border-solid border-[#e4e4e7] flex flex-col gap-0.5">
                       <button
                         onClick={(e) => {
                           togglePin(item.sessionId, e);
                           setActiveMenuId(null);
                         }}
-                        style={dropdownItemStyle}
-                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-normal text-[#18181b] cursor-pointer transition-colors duration-150 hover:bg-[#f4f4f5]"
                       >
                         {isPinned ? "고정 해제" : "고정"}
                       </button>
@@ -367,9 +213,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           handleDeleteSession(item.sessionId, e);
                           setActiveMenuId(null);
                         }}
-                        style={{ ...dropdownItemStyle, color: "#ef4444" }}
-                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#fee2e2")}
-                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-normal text-[#ef4444] cursor-pointer transition-colors duration-150 hover:bg-red-50"
                       >
                         삭제
                       </button>
