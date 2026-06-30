@@ -93,7 +93,7 @@ const EmptyState: React.FC = () => (
         alignItems: "center",
         justifyContent: "center",
         color: "#94a3b8",
-        fontSize: "11px",
+        fontSize: "var(--fs-xs)",
         fontWeight: "600",
         letterSpacing: "1px"
       }}
@@ -102,10 +102,10 @@ const EmptyState: React.FC = () => (
     </div>
     
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "15px", letterSpacing: "-0.01em" }}>
+      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -264,14 +264,14 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ companyName, analysisData
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
             <div style={{ textAlign: "left" }}>
-              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#18181b" }}>
+              <h3 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b" }}>
                 {data.fullName} 경영 실적 추이
               </h3>
-              <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#71717a" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xs)", color: "#71717a" }}>
                 연도별 총 매출액 및 영업이익 변화 추이
               </p>
             </div>
-            <span style={{ fontSize: "11px", color: "#a1a1aa", backgroundColor: "#f4f4f5", padding: "2px 8px", borderRadius: "4px" }}>
+            <span style={{ fontSize: "var(--fs-xs)", color: "#a1a1aa", backgroundColor: "#f4f4f5", padding: "2px 8px", borderRadius: "4px" }}>
               단위: 조원
             </span>
           </div>
@@ -296,17 +296,17 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ companyName, analysisData
           }}
         >
           <div style={{ marginBottom: "16px", textAlign: "left" }}>
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#18181b" }}>
+            <h3 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b" }}>
               임직원 1인당 영업이익 분석
             </h3>
-            <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#71717a" }}>
+            <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xs)", color: "#71717a" }}>
               총 영업이익 대비 임직원 수 ({data.employeeCount ? `${data.employeeCount.toLocaleString()}명` : "정보 없음"} 기준) 비례 분석
             </p>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1, justifyContent: "center" }}>
             {data.employeeCount === 0 ? (
-              <div style={{ fontSize: "12px", color: "#71717a", padding: "24px 0", textAlign: "center" }}>
+              <div style={{ fontSize: "var(--fs-sm)", color: "#71717a", padding: "24px 0", textAlign: "center" }}>
                 임직원 수 정보가 제공되지 않아 1인당 생산성 지표 분석이 불가능합니다.
               </div>
             ) : (
@@ -349,27 +349,27 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ companyName, analysisData
                     }}
                   >
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                      <span style={{ fontSize: "13px", fontWeight: "700", color: "#111827" }}>
+                      <span style={{ fontSize: "var(--fs-md)", fontWeight: "700", color: "#111827" }}>
                         {yr}년
                       </span>
-                      <span style={{ fontSize: "11px", color: "#6b7280", marginTop: "4px" }}>
+                      <span style={{ fontSize: "var(--fs-xs)", color: "#6b7280", marginTop: "4px" }}>
                         영업이익: <span style={{ fontWeight: "600", color: isDeficit ? "#ef4444" : "#374151" }}>{profitFormatted}</span>
                       </span>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                       <div style={{ textAlign: "right" }}>
-                        <span style={{ fontSize: "9px", color: "#6b7280", display: "block", marginBottom: "2px" }}>
+                        <span style={{ fontSize: "var(--fs-xs)", color: "#6b7280", display: "block", marginBottom: "2px" }}>
                           1인당 생산성
                         </span>
-                        <span style={{ fontSize: "15px", fontWeight: "800", color: isDeficit ? "#ef4444" : "#111827" }}>
+                        <span style={{ fontSize: "var(--fs-lg)", fontWeight: "800", color: isDeficit ? "#ef4444" : "#111827" }}>
                           {isDeficit ? "-" : ""}{Math.abs(Math.round(profitPerEmployee / 10000)).toLocaleString()}만원
                         </span>
                       </div>
                       
                       <span
                         style={{
-                          fontSize: "10px",
+                          fontSize: "var(--fs-xs)",
                           fontWeight: "700",
                           padding: "4px 10px",
                           borderRadius: "100px",
@@ -410,16 +410,16 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ companyName, analysisData
         }}
       >
         <div style={{ marginBottom: "20px", textAlign: "left" }}>
-          <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#18181b" }}>
+          <h3 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b" }}>
             주요 요약 재무상태표 현황
           </h3>
-          <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#71717a" }}>
+          <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xs)", color: "#71717a" }}>
             과거 3개년 경영 실적 성과 및 예상 지표 세부 요약표
           </p>
         </div>
 
         <div style={{ overflowX: "auto", width: "100%", borderRadius: "8px", border: "1px solid #f3f4f6" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "500px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-sm)", minWidth: "500px" }}>
             <thead>
               <tr style={{ color: "#374151", backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
                 <th style={{ padding: "14px 18px", fontWeight: "700", textAlign: "left" }}>재무 지표</th>
@@ -467,7 +467,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ companyName, analysisData
                     }}
                   >
                     <td style={{ padding: "14px 18px", fontWeight: "600", color: "#374151", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "14px" }}>{rowIcon}</span>
+                      <span style={{ fontSize: "var(--fs-lg)" }}>{rowIcon}</span>
                       {row.label}
                     </td>
                     {data.years.map((yr, yIdx) => {

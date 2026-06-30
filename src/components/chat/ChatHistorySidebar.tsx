@@ -90,7 +90,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     backgroundColor: "transparent",
     borderRadius: "4px",
     cursor: "pointer",
-    fontSize: "11px",
+    fontSize: "var(--fs-xs)",
     fontWeight: "400",
     color: "#18181b",
     textAlign: "left",
@@ -156,7 +156,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             whiteSpace: "nowrap",
           }}
         >
-          <span style={{ fontWeight: "700", fontSize: "15px", color: "#1f1f1f" }}>
+          <span style={{ fontWeight: "700", fontSize: "var(--fs-lg)", color: "#1f1f1f" }}>
             최근 분석 목록
           </span>
           <button
@@ -198,7 +198,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               borderRadius: "100px",
               color: "#1f1f1f",
               fontWeight: "600",
-              fontSize: "13px",
+              fontSize: "var(--fs-md)",
               cursor: "pointer",
               transition: "all 0.2s ease",
             }}
@@ -222,7 +222,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           }}
         >
           {sortedSessions.length === 0 ? (
-            <div style={{ fontSize: "11px", color: "#a1a1aa", padding: "24px 0", textAlign: "center" }}>
+            <div style={{ fontSize: "var(--fs-xs)", color: "#a1a1aa", padding: "24px 0", textAlign: "center" }}>
               분석 이력이 존재하지 않습니다.
             </div>
           ) : (
@@ -246,7 +246,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     whiteSpace: "nowrap",
-                    fontSize: "12px",
+                    fontSize: "var(--fs-sm)",
                     fontWeight: isActive ? "600" : "400",
                     color: isActive ? "#18181b" : "#71717a",
                     display: "flex",
@@ -298,7 +298,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           justifyContent: "center",
                           padding: "2px 4px",
                           borderRadius: "4px",
-                          fontSize: "12px",
+                          fontSize: "var(--fs-sm)",
                           color: "#71717a",
                           transition: "all 0.15s ease",
                         }}

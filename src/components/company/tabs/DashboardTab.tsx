@@ -67,7 +67,7 @@ const EmptyState: React.FC = () => (
         alignItems: "center",
         justifyContent: "center",
         color: "#94a3b8",
-        fontSize: "11px",
+        fontSize: "var(--fs-xs)",
         fontWeight: "600",
         letterSpacing: "1px"
       }}
@@ -76,10 +76,10 @@ const EmptyState: React.FC = () => (
     </div>
     
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "15px", letterSpacing: "-0.01em" }}>
+      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -167,21 +167,21 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                     fontWeight: "bold",
                   }}
                 >
-                  <div style={{ color: "#4f46e5", fontSize: "10px" }}>
+                  <div style={{ color: "#4f46e5", fontSize: "var(--fs-xs)" }}>
                     {basic.isListed ? basic.stockMarket || "KOSPI" : "CORP"}
                   </div>
                 </div>
                 <div style={{ textAlign: "left" }}>
-                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#18181b" }}>
+                  <h3 style={{ margin: 0, fontSize: "var(--fs-2xl)", fontWeight: "700", color: "#18181b" }}>
                     {basic.companyName}
                   </h3>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#71717a" }}>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-sm)", color: "#71717a" }}>
                     {basic.industry || "정보 없음"}
                   </p>
                 </div>
               </div>
 
-              <div style={{ marginTop: "16px", fontSize: "12px", color: "#4b5563", display: "flex", flexDirection: "column", gap: "4px", textAlign: "left" }}>
+              <div style={{ marginTop: "16px", fontSize: "var(--fs-sm)", color: "#4b5563", display: "flex", flexDirection: "column", gap: "4px", textAlign: "left" }}>
                 <div><strong>대표이사:</strong> {basic.ceo}</div>
                 <div><strong>본사 주소:</strong> {basic.address}</div>
                 <div><strong>설립연도:</strong> {basic.establishedYear}년</div>
@@ -197,7 +197,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                     border: "1px solid #e4e4e7",
                     borderRadius: "6px",
                     padding: "6px 12px",
-                    fontSize: "11px",
+                    fontSize: "var(--fs-xs)",
                     fontWeight: "500",
                     color: "#18181b",
                     backgroundColor: "#ffffff",
@@ -213,7 +213,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                     border: "1px solid #e4e4e7",
                     borderRadius: "6px",
                     padding: "6px 12px",
-                    fontSize: "11px",
+                    fontSize: "var(--fs-xs)",
                     fontWeight: "500",
                     color: "#18181b",
                     backgroundColor: "#ffffff",
@@ -229,7 +229,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                     border: "1px solid #e4e4e7",
                     borderRadius: "6px",
                     padding: "6px 12px",
-                    fontSize: "11px",
+                    fontSize: "var(--fs-xs)",
                     fontWeight: "500",
                     color: "#18181b",
                     backgroundColor: "#ffffff",
@@ -257,7 +257,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
               boxSizing: "border-box",
             }}
           >
-            <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+            <h4 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
               최근 실적 요약 ({latestYear ? `${latestYear}년` : ""})
             </h4>
 
@@ -276,8 +276,8 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                   alignItems: "flex-start"
                 }}
               >
-                <span style={{ fontSize: "11px", color: "#71717a" }}>매출액</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "16px", fontWeight: "700", color: "#18181b" }}>
+                <span style={{ fontSize: "var(--fs-xs)", color: "#71717a" }}>매출액</span>
+                <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xl)", fontWeight: "700", color: "#18181b" }}>
                   {revenueStr}
                 </p>
               </div>
@@ -295,8 +295,8 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                   alignItems: "flex-start"
                 }}
               >
-                <span style={{ fontSize: "11px", color: "#71717a" }}>영업이익</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "16px", fontWeight: "700", color: "#4f46e5" }}>
+                <span style={{ fontSize: "var(--fs-xs)", color: "#71717a" }}>영업이익</span>
+                <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-xl)", fontWeight: "700", color: "#4f46e5" }}>
                   {opProfitStr}
                 </p>
               </div>
@@ -318,13 +318,13 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
             boxSizing: "border-box",
           }}
         >
-          <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+          <h4 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
             최신 관련 뉴스
           </h4>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1, justifyContent: "space-between" }}>
             {mappedNews.length === 0 ? (
-              <div style={{ fontSize: "12px", color: "#71717a", padding: "24px 0", textAlign: "center" }}>수집된 뉴스가 없습니다.</div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "#71717a", padding: "24px 0", textAlign: "center" }}>수집된 뉴스가 없습니다.</div>
             ) : (
               mappedNews.slice(0, 3).map((news, idx) => (
                 <div
@@ -354,7 +354,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "14px",
+                      fontSize: "var(--fs-lg)",
                       flexShrink: 0,
                       border: "1px solid #cbd5e1",
                       boxSizing: "border-box",
@@ -364,13 +364,13 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                   </div>
 
                   <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }}>
-                    <span style={{ fontSize: "10px", color: "#71717a", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "var(--fs-xs)", color: "#71717a", marginBottom: "4px" }}>
                       {news.press} • {news.time}
                     </span>
                     <h5
                       style={{
                         margin: "0 0 4px 0",
-                        fontSize: "12px",
+                        fontSize: "var(--fs-sm)",
                         fontWeight: "700",
                         color: "#1a73e8",
                         lineHeight: "1.4",
@@ -386,7 +386,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
                     <p
                       style={{
                         margin: 0,
-                        fontSize: "11px",
+                        fontSize: "var(--fs-xs)",
                         color: "#71717a",
                         lineHeight: "1.5",
                         overflow: "hidden",
@@ -420,15 +420,15 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }
           boxSizing: "border-box",
         }}
       >
-        <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+        <h4 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
           AI 종합 분석 피드백
         </h4>
 
         <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-          <span style={{ fontSize: "12px", color: "#18181b", fontWeight: "700", flexShrink: 0 }}>
+          <span style={{ fontSize: "var(--fs-sm)", color: "#18181b", fontWeight: "700", flexShrink: 0 }}>
             ✦
           </span>
-          <span style={{ fontSize: "12px", color: "#71717a", lineHeight: "1.5", whiteSpace: "pre-wrap", textAlign: "left" }}>
+          <span style={{ fontSize: "var(--fs-sm)", color: "#71717a", lineHeight: "1.5", whiteSpace: "pre-wrap", textAlign: "left" }}>
             {aiFeedbackText}
           </span>
         </div>

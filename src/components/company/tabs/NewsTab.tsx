@@ -44,7 +44,7 @@ const EmptyState: React.FC = () => (
         alignItems: "center",
         justifyContent: "center",
         color: "#94a3b8",
-        fontSize: "11px",
+        fontSize: "var(--fs-xs)",
         fontWeight: "600",
         letterSpacing: "1px"
       }}
@@ -53,10 +53,10 @@ const EmptyState: React.FC = () => (
     </div>
     
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "15px", letterSpacing: "-0.01em" }}>
+      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -91,8 +91,8 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
-          실시간 기업 관련 뉴스 피드
+        <h3 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+          관련 언론사 뉴스 리포트
         </h3>
       </div>
 
@@ -124,7 +124,7 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "20px",
+              fontSize: "var(--fs-3xl)",
               flexShrink: 0,
               border: "1px solid #cbd5e1",
               boxSizing: "border-box",
@@ -137,7 +137,7 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "var(--fs-xs)",
                   fontWeight: "700",
                   color: news.color,
                   backgroundColor: news.bgColor,
@@ -147,12 +147,12 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
               >
                 {news.category}
               </span>
-              <span style={{ fontSize: "12px", color: "#71717a" }}>{news.press}</span>
+              <span style={{ fontSize: "var(--fs-sm)", color: "#71717a" }}>{news.press}</span>
             </div>
             <h4
               style={{
                 margin: "0 0 6px 0",
-                fontSize: "14px",
+                fontSize: "var(--fs-lg)",
                 fontWeight: "700",
                 color: "#18181b",
                 lineHeight: "1.4",
@@ -161,7 +161,7 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
             >
               {news.title}
             </h4>
-            <p style={{ margin: 0, fontSize: "12px", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
+            <p style={{ margin: 0, fontSize: "var(--fs-sm)", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
               {news.desc}
             </p>
           </div>

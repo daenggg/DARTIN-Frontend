@@ -46,7 +46,7 @@ const EmptyState: React.FC = () => (
         alignItems: "center",
         justifyContent: "center",
         color: "#94a3b8",
-        fontSize: "11px",
+        fontSize: "var(--fs-xs)",
         fontWeight: "600",
         letterSpacing: "1px"
       }}
@@ -55,10 +55,10 @@ const EmptyState: React.FC = () => (
     </div>
     
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "15px", letterSpacing: "-0.01em" }}>
+      <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "var(--fs-lg)", letterSpacing: "-0.01em" }}>
         데이터 분석 세션 대기 중
       </div>
-      <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: "1.6", color: "#64748b", maxWidth: "360px" }}>
         실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
@@ -92,7 +92,7 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
           border: "1px solid #e4e4e7",
         }}
       >
-        <h3 style={{ margin: "0 0 20px 0", fontSize: "15px", fontWeight: 700, color: "#18181b", textAlign: "left" }}>
+        <h3 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b", textAlign: "left" }}>
           기업 기본 정보
         </h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
@@ -103,7 +103,7 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
                 display: "flex",
                 borderBottom: "1px solid #f4f4f5",
                 paddingBottom: "12px",
-                fontSize: "13px",
+                fontSize: "var(--fs-md)",
               }}
             >
               <span style={{ width: "140px", color: "#71717a", fontWeight: "500", textAlign: "left" }}>{item.label}</span>
@@ -122,7 +122,7 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
           border: "1px solid #e4e4e7",
         }}
       >
-        <h3 style={{ margin: "0 0 20px 0", fontSize: "15px", fontWeight: 700, color: "#18181b", textAlign: "left" }}>
+        <h3 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-lg)", fontWeight: 700, color: "#18181b", textAlign: "left" }}>
           핵심 기업 비전
         </h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
@@ -149,10 +149,10 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
                 border: "1px solid #e4e4e7",
               }}
             >
-              <h4 style={{ margin: "0 0 10px 0", fontSize: "13px", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
+              <h4 style={{ margin: "0 0 10px 0", fontSize: "var(--fs-md)", fontWeight: "700", color: "#18181b", textAlign: "left" }}>
                 {card.title}
               </h4>
-              <p style={{ margin: 0, fontSize: "12px", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
+              <p style={{ margin: 0, fontSize: "var(--fs-sm)", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
                 {card.desc}
               </p>
             </div>

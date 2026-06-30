@@ -59,23 +59,23 @@ const CompanyHeader: React.FC<CompanyHeaderProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#ffffff",
-                fontSize: "7px",
+                fontSize: "var(--fs-xs)",
                 fontWeight: "900",
               }}
             >
               SAMSUNG
             </div>
           ) : (
-            <div style={{ fontSize: "14px", fontWeight: "bold", color: "#e11d48" }}>
+            <div style={{ fontSize: "var(--fs-lg)", fontWeight: "bold", color: "#e11d48" }}>
               SK
             </div>
           )}
         </div>
         <div>
-          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "#1f1f1f" }}>
+          <h2 style={{ margin: 0, fontSize: "var(--fs-3xl)", fontWeight: 700, color: "#1f1f1f" }}>
             {companyName}
           </h2>
-          <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#5f6368" }}>
+          <p style={{ margin: "4px 0 0 0", fontSize: "var(--fs-md)", color: "#5f6368" }}>
             {description}
           </p>
         </div>
@@ -100,7 +100,7 @@ const CompanyHeader: React.FC<CompanyHeaderProps> = ({
               border: "1px solid #cbd5e1",
               borderRadius: "100px", // 완전히 둥근 알약형
               padding: "8px 16px",
-              fontSize: "12px",
+              fontSize: "var(--fs-sm)",
               fontWeight: "600",
               color: "#3c4043",
               backgroundColor: "#ffffff",
