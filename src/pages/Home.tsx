@@ -32,6 +32,18 @@ const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("사용자");
   const [activeTab, setActiveTab] = useState<string>("대시보드");
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => 
+    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  );
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
@@ -561,7 +573,7 @@ const Home = (): React.JSX.Element => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen flex bg-[#fcfcfc] font-sans overflow-hidden box-border text-[#1a1a1a]">
+    <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen flex bg-[#fcfcfc] dark:bg-[#0b0c10] font-sans overflow-hidden box-border text-[#1a1a1a] dark:text-[#f4f4f5]">
       <ChatHistorySidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -589,13 +601,13 @@ const Home = (): React.JSX.Element => {
         {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
         <div
           onMouseDown={handleMouseDown}
-          className={`w-[5px] cursor-col-resize border-l border-solid border-l-[#e2e8f0] transition-colors duration-150 h-full shrink-0 z-10 select-none ${
+          className={`w-[5px] cursor-col-resize border-l border-solid border-l-[#e2e8f0] dark:border-l-zinc-800 transition-colors duration-150 h-full shrink-0 z-10 select-none ${
             isResizing ? "bg-blue-500" : "bg-transparent"
           }`}
         />
 
-        <div className="flex-1 h-full flex flex-col bg-white overflow-hidden box-border">
-          <div className="flex items-center justify-between border-b border-solid border-[#e2e8f0] px-6 h-11 bg-white shrink-0">
+        <div className="flex-1 h-full flex flex-col bg-white dark:bg-[#121318] overflow-hidden box-border">
+          <div className="flex items-center justify-between border-b border-solid border-[#e2e8f0] dark:border-zinc-800 px-6 h-11 bg-white dark:bg-[#121318] shrink-0">
             <div className="flex gap-6 h-full">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -605,26 +617,37 @@ const Home = (): React.JSX.Element => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`bg-transparent border-none px-1 text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out ${
                       isActive
-                        ? "font-semibold text-[#1a1a1a]"
-                        : "font-normal text-[#71717a] hover:text-[#1a1a1a]"
+                        ? "font-semibold text-[#1a1a1a] dark:text-[#f4f4f5]"
+                        : "font-normal text-[#71717a] dark:text-zinc-400 hover:text-[#1a1a1a] dark:hover:text-zinc-50"
                     }`}
                   >
                     {tab.label}
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1a1a1a]" />
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1a1a1a] dark:bg-[#f4f4f5]" />
                     )}
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-[#71717a]">
+            <div className="flex items-center gap-4 text-xs text-[#71717a] dark:text-zinc-400">
               <span>{userName}님</span>
               <button
                 onClick={handleLogout}
-                className="border border-solid border-[#e2e8f0] bg-transparent py-1 px-2.5 rounded text-xs text-[#71717a] cursor-pointer transition-colors duration-150 hover:border-[#cbd5e1] hover:text-[#1a1a1a]"
+                className="border border-solid border-[#e2e8f0] dark:border-zinc-800 bg-transparent py-1 px-2.5 rounded text-xs text-[#71717a] dark:text-zinc-400 cursor-pointer transition-colors duration-150 hover:border-[#cbd5e1] dark:hover:border-zinc-600 hover:text-[#1a1a1a] dark:hover:text-zinc-50"
               >
                 로그아웃
+              </button>
+              <button
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="border border-solid border-[#e2e8f0] dark:border-zinc-800 bg-transparent p-1.5 rounded-lg cursor-pointer text-[#71717a] dark:text-zinc-400 hover:border-[#cbd5e1] dark:hover:border-zinc-600 hover:text-[#1a1a1a] dark:hover:text-zinc-50 flex items-center justify-center"
+                title={theme === 'light' ? '다크모드 켜기' : '라이트모드 켜기'}
+              >
+                {theme === 'light' ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                )}
               </button>
             </div>
           </div>

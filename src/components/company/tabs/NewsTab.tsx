@@ -14,17 +14,17 @@ interface NewsTabProps {
 }
 
 const EmptyState: React.FC = () => (
-  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white rounded-xl border border-solid border-[#f1f5f9] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_10px_30px_rgba(0,0,0,0.02)] text-[#475569] text-center gap-6 font-sans w-full box-border">
-    <div className="w-16 h-16 rounded-full bg-[#f8fafc] border border-solid border-[#e2e8f0] flex items-center justify-center text-[#94a3b8] text-xs font-semibold tracking-wider">
-      NEWS
+  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white dark:bg-[#121318] rounded-xl border border-solid border-[#f1f5f9] dark:border-zinc-800 text-[#475569] dark:text-zinc-400 text-center gap-6 font-sans w-full box-border">
+    <div className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+      NO NEWS DATA
     </div>
     
     <div className="flex flex-col gap-2">
-      <div className="font-semibold text-[#0f172a] text-lg tracking-tight">
+      <div className="font-semibold text-[#0f172a] dark:text-zinc-200 text-lg tracking-tight">
         데이터 분석 세션 대기 중
       </div>
-      <div className="text-sm leading-relaxed text-[#64748b] max-w-[360px] mx-auto">
-        실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
+      <div className="text-sm leading-relaxed text-[#64748b] dark:text-zinc-400 max-w-[360px] mx-auto">
+        실시간 기업 공시 정보, 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
   </div>
@@ -36,19 +36,17 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
   }
 
   const categories = [
-    { name: "속보", color: "#9b72cb", bgColor: "#f4f0fa" },
-    { name: "기술/연구", color: "#4285f4", bgColor: "#f0f4f9" },
-    { name: "공급망", color: "#4f46e5", bgColor: "#f0effd" },
-    { name: "인사/채용", color: "#0d9488", bgColor: "#f0fdfa" },
+    { name: "속보" },
+    { name: "기술/연구" },
+    { name: "공급망" },
+    { name: "인사/채용" },
   ];
 
   const newsList = analysisData.news.map((item, idx) => {
     const cat = categories[idx % categories.length];
     return {
       category: cat.name,
-      color: cat.color,
-      bgColor: cat.bgColor,
-      press: `뉴스 • ${item.publishedAt}`,
+      press: `뉴스 • ${item.publishedAt.split("T")[0]}`,
       title: item.title,
       desc: item.summary,
       url: item.url,
@@ -56,42 +54,41 @@ const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
   });
 
   return (
-    <div className="flex flex-col gap-4 font-sans">
-      <div className="flex justify-between items-center mb-1">
-        <h3 className="m-0 text-lg font-bold text-[#18181b] text-left">
-          관련 언론사 뉴스 리포트
-        </h3>
+    <div className="border border-solid border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#121318] w-full box-border text-[#18181b] dark:text-[#f4f4f5] text-left flex flex-col font-sans">
+      
+      {/* 타이틀 헤더 바 */}
+      <div className="p-4 px-6 border-b border-solid border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between shrink-0">
+        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+          MEDIA REPORT / 관련 언론사 뉴스 리포트
+        </span>
       </div>
 
-      {newsList.map((news, idx) => (
-        <div
-          key={idx}
-          onClick={() => window.open(news.url, "_blank")}
-          className="bg-white rounded-lg p-5 border border-solid border-[#e4e4e7] flex gap-5 items-center cursor-pointer transition-colors duration-150 hover:border-[#a1a1aa]"
-        >
-          <div className="w-20 h-20 bg-gradient-to-br from-[#e2e8f0] to-[#cbd5e1] rounded-md flex items-center justify-center text-3xl shrink-0 border border-solid border-[#cbd5e1] box-border">
-            📰
-          </div>
-
-          <div className="flex-1 flex flex-col items-start text-left">
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                style={{ color: news.color, backgroundColor: news.bgColor }}
-                className="text-xs font-bold py-1 px-2 rounded"
-              >
+      {/* 뉴스 목록 리스트 */}
+      <div className="flex flex-col w-full">
+        {newsList.map((news, idx) => (
+          <div
+            key={idx}
+            onClick={() => window.open(news.url, "_blank")}
+            className="p-6 border-b border-solid border-zinc-200 dark:border-zinc-800 last:border-none flex flex-col items-start cursor-pointer transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 box-border text-left"
+          >
+            <div className="flex items-center gap-3 mb-2.5 text-xs">
+              <span className="text-[9px] font-bold py-0.5 px-2.5 rounded-full border border-solid border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 tracking-wider">
                 {news.category}
               </span>
-              <span className="text-sm text-[#71717a]">{news.press}</span>
+              <span className="text-zinc-400 dark:text-zinc-500 font-semibold">{news.press}</span>
             </div>
-            <h4 className="m-0 mb-1.5 text-lg font-bold text-[#18181b] leading-snug text-left">
+            
+            <h4 className="m-0 mb-2 text-md font-bold text-zinc-950 dark:text-zinc-50 leading-snug hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150">
               {news.title}
             </h4>
-            <p className="m-0 text-sm text-[#71717a] leading-relaxed text-left">
+            
+            <p className="m-0 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
               {news.desc}
             </p>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
     </div>
   );
 };

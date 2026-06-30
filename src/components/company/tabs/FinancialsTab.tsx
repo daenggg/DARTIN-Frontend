@@ -63,18 +63,17 @@ interface CompanyFinancialData {
 }
 
 const EmptyState: React.FC = () => (
-  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white rounded-xl border border-solid border-[#f1f5f9] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_10px_30px_rgba(0,0,0,0.02)] text-[#475569] text-center gap-6 font-sans w-full box-border">
-    <div className="w-16 h-16 rounded-full bg-[#f8fafc] border border-solid border-[#e2e8f0] flex items-center justify-center text-[#94a3b8] text-xs font-semibold tracking-wider">
-      FINANCES
+  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white dark:bg-[#121318] rounded-xl border border-solid border-[#f1f5f9] dark:border-zinc-800 text-[#475569] dark:text-zinc-400 text-center gap-6 font-sans w-full box-border">
+    <div className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+      NO FINANCIAL DATA
     </div>
 
     <div className="flex flex-col gap-2">
-      <div className="font-semibold text-[#0f172a] text-lg tracking-tight">
+      <div className="font-semibold text-[#0f172a] dark:text-zinc-200 text-lg tracking-tight">
         데이터 분석 세션 대기 중
       </div>
-      <div className="text-sm leading-relaxed text-[#64748b] max-w-[360px] mx-auto">
-        실시간 기업 공시 정보(DART), 재무 실적 추이 및 미디어 정보 추출을
-        시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
+      <div className="text-sm leading-relaxed text-[#64748b] dark:text-zinc-400 max-w-[360px] mx-auto">
+        실시간 기업 공시 정보, 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
       </div>
     </div>
   </div>
@@ -176,7 +175,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
         position: "top" as const,
         labels: {
           font: {
-            family: "'Inter', sans-serif",
+            family: "sans-serif",
             size: 11,
           },
           color: "#71717a",
@@ -184,7 +183,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
       },
       tooltip: {
         bodyFont: {
-          family: "'Inter', sans-serif",
+          family: "sans-serif",
         },
       },
     },
@@ -196,7 +195,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
         ticks: {
           color: "#71717a",
           font: {
-            family: "'Inter', sans-serif",
+            family: "sans-serif",
             size: 11,
           },
         },
@@ -208,7 +207,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
         ticks: {
           color: "#71717a",
           font: {
-            family: "'Inter', sans-serif",
+            family: "sans-serif",
             size: 11,
           },
         },
@@ -217,49 +216,42 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-6 font-sans w-full box-border">
-      <div className="flex gap-6 flex-wrap w-full">
-        {/* 차트 카드 */}
-        <div className="flex-[1.2] min-w-[340px] bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] shadow-[0_1px_3px_0_rgba(0,0,0,0.05),0_1px_2px_0_rgba(0,0,0,0.06)] box-border flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="text-left">
-              <h3 className="m-0 text-lg font-bold text-[#18181b]">
-                {data.fullName} 경영 실적 추이
-              </h3>
-              <p className="mt-1 text-xs text-[#71717a] m-0">
-                연도별 총 매출액 및 영업이익 변화 추이
-              </p>
-            </div>
-            <span className="text-xs text-[#a1a1aa] bg-[#f4f4f5] py-0.5 px-2 rounded">
-              단위: 조원
-            </span>
+    <div className="border border-solid border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#121318] w-full box-border text-[#18181b] dark:text-[#f4f4f5] text-left flex flex-col font-sans">
+      
+      {/* 1단계: 상단 실적 추이 차트 및 인원당 실적 분석 (좌우 격자 분할) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 w-full border-b border-solid border-zinc-200 dark:border-zinc-800">
+        
+        {/* 좌측: 실적 차트 */}
+        <div className="lg:col-span-6 p-6 flex flex-col justify-between border-solid border-zinc-200 dark:border-zinc-800 lg:border-r max-lg:border-b box-border">
+          <div className="text-left">
+            <h3 className="m-0 text-lg font-bold text-zinc-950 dark:text-zinc-50">
+              {data.fullName} 경영 실적 추이
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 m-0">
+              연도별 총 매출액 및 영업이익 변화 추이 (단위: 조원)
+            </p>
           </div>
 
-          <div className="flex-1 min-h-[280px] relative">
+          <div className="flex-1 min-h-[280px] relative mt-4">
             <ReactBar data={chartData} options={chartOptions} />
           </div>
         </div>
 
-        {/* 1인당 영업이익 분석 섹션 */}
-        <div className="flex-1 min-w-[300px] bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] shadow-[0_1px_3px_0_rgba(0,0,0,0.05),0_1px_2px_0_rgba(0,0,0,0.06)] flex flex-col box-border">
+        {/* 우측: 임직원 1인당 영업이익 생산성 분석 */}
+        <div className="lg:col-span-6 p-6 flex flex-col justify-between box-border">
           <div className="mb-4 text-left">
-            <h3 className="m-0 text-lg font-bold text-[#18181b]">
+            <h3 className="m-0 text-lg font-bold text-zinc-950 dark:text-zinc-50">
               임직원 1인당 영업이익 분석
             </h3>
-            <p className="mt-1 text-xs text-[#71717a] m-0">
-              총 영업이익 대비 임직원 수 (
-              {data.employeeCount
-                ? `${data.employeeCount.toLocaleString()}명`
-                : "정보 없음"}{" "}
-              기준) 비례 분석
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 m-0">
+              총 영업이익 대비 임직원 수 ({data.employeeCount ? `${data.employeeCount.toLocaleString()}명` : "정보 없음"} 기준) 비례 생산성 지표
             </p>
           </div>
 
-          <div className="flex flex-col gap-2.5 flex-1 justify-center">
+          <div className="flex flex-col gap-3 flex-1 justify-center mt-4">
             {data.employeeCount === 0 ? (
-              <div className="text-sm text-[#71717a] py-6 text-center">
-                임직원 수 정보가 제공되지 않아 1인당 생산성 지표 분석이
-                불가능합니다.
+              <div className="text-sm text-zinc-400 dark:text-zinc-500 py-6 text-center">
+                임직원 수 정보가 누락되어 1인당 생산성 분석이 불가능합니다.
               </div>
             ) : (
               data.years.map((yr, idx) => {
@@ -271,27 +263,17 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
                 const isGood = profitPerEmployee > 200000000;
                 const isDeficit = rawProfit < 0;
 
-                const borderLeftClass = isDeficit
-                  ? "border-l-[#f87171]"
-                  : isGood
-                    ? "border-l-[#34d399]"
-                    : "border-l-[#fbbf24]";
                 const dotBgClass = isDeficit
-                  ? "bg-[#ef4444]"
+                  ? "bg-red-500"
                   : isGood
-                    ? "bg-[#10b981]"
-                    : "bg-[#f59e0b]";
-                const bgClass = isDeficit
-                  ? "bg-[rgba(239,68,68,0.02)] hover:bg-[rgba(239,68,68,0.05)]"
-                  : isGood
-                    ? "bg-[rgba(16,185,129,0.02)] hover:bg-[rgba(16,185,129,0.05)]"
-                    : "bg-[rgba(245,158,11,0.02)] hover:bg-[rgba(245,158,11,0.05)]";
+                    ? "bg-emerald-500"
+                    : "bg-amber-500";
 
                 const badgeClass = isDeficit
-                  ? "bg-[#fef2f2] text-[#ef4444] border-[#fecaca]"
+                  ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50"
                   : isGood
-                    ? "bg-[#ecfdf5] text-[#10b981] border-[#a7f3d0]"
-                    : "bg-[#fffbeb] text-[#f59e0b] border-[#fef3c7]";
+                    ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50"
+                    : "bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50";
 
                 const profitFormatted =
                   rawProfit >= 1e12
@@ -301,53 +283,37 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
                 return (
                   <div
                     key={idx}
-                    className={`flex items-center justify-between py-3.5 px-5 rounded border border-solid border-[#f3f4f6] border-l-4 ${borderLeftClass} ${bgClass} transition-all duration-200 hover:translate-x-0.5`}
+                    className="flex items-center justify-between py-2.5 border-b border-solid border-zinc-100 dark:border-zinc-900 last:border-none text-sm"
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-md font-bold text-[#111827]">
+                      <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                         {yr}년
                       </span>
-                      <span className="text-xs text-[#6b7280] mt-1">
-                        영업이익:{" "}
-                        <span
-                          className={
-                            isDeficit
-                              ? "text-[#ef4444] font-semibold"
-                              : "text-[#374151] font-semibold"
-                          }
-                        >
-                          {profitFormatted}
-                        </span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        영업이익: <span className="font-semibold">{profitFormatted}</span>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-xs text-[#6b7280] block mb-0.5">
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">
                           1인당 생산성
                         </span>
-                        <span
-                          className={`text-lg font-extrabold ${isDeficit ? "text-[#ef4444]" : "text-[#111827]"}`}
-                        >
+                        <span className="text-md font-extrabold text-zinc-950 dark:text-zinc-50">
                           {isDeficit ? "-" : ""}
-                          {Math.abs(
-                            Math.round(profitPerEmployee / 10000),
-                          ).toLocaleString()}
-                          만원
+                          {Math.abs(Math.round(profitPerEmployee / 10000)).toLocaleString()}만원
                         </span>
                       </div>
 
                       <span
-                        className={`text-xs font-bold py-1 px-2.5 rounded-full border border-solid flex items-center gap-1.5 w-20 justify-center box-border ${badgeClass}`}
+                        className={`text-[9px] font-bold py-0.5 px-2 rounded-full border border-solid flex items-center gap-1.5 w-18 justify-center box-border ${badgeClass}`}
                       >
-                        <span
-                          className={`inline-block w-1.5 h-1.5 rounded-full ${dotBgClass}`}
-                        ></span>
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotBgClass}`} />
                         {isDeficit
-                          ? "적자/불황"
+                          ? "적자"
                           : isGood
-                            ? "성과 우수"
-                            : "평균 보통"}
+                            ? "우수"
+                            : "보통"}
                       </span>
                     </div>
                   </div>
@@ -356,73 +322,57 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
             )}
           </div>
         </div>
+
       </div>
 
-      {/* 요약 재무 테이블 */}
-      <div className="bg-white rounded-lg p-6 border border-solid border-[#e4e4e7] shadow-[0_1px_3px_0_rgba(0,0,0,0.05),0_1px_2px_0_rgba(0,0,0,0.06)] w-full box-border">
-        <div className="mb-5 text-left">
-          <h3 className="m-0 text-lg font-bold text-[#18181b]">
-            주요 요약 재무상태표 현황
-          </h3>
-          <p className="mt-1 text-xs text-[#71717a] m-0">
-            과거 3개년 경영 실적 성과 및 예상 지표 세부 요약표
-          </p>
-        </div>
+      {/* 2단계: 하단 요약 재무 테이블 영역 */}
+      <div className="p-4 px-6 border-b border-solid border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between shrink-0">
+        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+          FINANCIAL TABLE / 요약 재무제표 현황
+        </span>
+      </div>
 
-        <div className="overflow-x-auto w-full rounded-lg border border-solid border-[#f3f4f6]">
-          <table className="w-full border-collapse text-sm min-w-[500px]">
-            <thead>
-              <tr className="text-[#374151] bg-[#f9fafb] border-b-2 border-solid border-[#e5e7eb]">
-                <th className="py-3.5 px-4.5 font-bold text-left">재무 지표</th>
-                {data.years.map((yr, yIdx) => {
-                  const isLast = yIdx === data.years.length - 1;
+      <div className="p-6 overflow-x-auto w-full box-border">
+        <table className="w-full border-collapse text-sm min-w-[500px]">
+          <thead>
+            <tr className="text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50 border-b border-solid border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-widest">
+              <th className="py-3.5 px-6 font-bold text-left">재무 주요 지표</th>
+              {data.years.map((yr) => (
+                <th
+                  key={yr}
+                  className="py-3.5 px-6 font-bold text-right"
+                >
+                  {yr}년
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.tableData.map((row, idx) => (
+              <tr
+                key={idx}
+                className="border-b border-solid border-zinc-100 dark:border-zinc-900 text-zinc-800 dark:text-zinc-200 transition-colors duration-150 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 last:border-none"
+              >
+                <td className="py-4 px-6 font-semibold text-zinc-900 dark:text-zinc-100 text-left">
+                  {row.label}
+                </td>
+                {data.years.map((yr) => {
+                  const val = row[`y${yr.slice(2)}`] || "-";
                   return (
-                    <th
+                    <td
                       key={yr}
-                      className={`py-3.5 px-4.5 font-bold text-center ${isLast ? "text-[#4f46e5] bg-[rgba(99,102,241,0.05)]" : ""}`}
+                      className="py-4 px-6 text-right font-medium text-zinc-800 dark:text-zinc-200"
                     >
-                      {yr}년
-                    </th>
+                      {val}
+                    </td>
                   );
                 })}
               </tr>
-            </thead>
-            <tbody>
-              {data.tableData.map((row, idx) => {
-                let rowIcon = "🔹";
-                if (row.label.includes("비율")) rowIcon = "📊";
-
-                const isEven = idx % 2 === 0;
-                const defaultRowBg = isEven ? "bg-white" : "bg-[#fdfdfd]";
-
-                return (
-                  <tr
-                    key={idx}
-                    className={`border-b border-solid border-[#f3f4f6] text-[#1f2937] ${defaultRowBg} transition-colors duration-150 hover:bg-slate-50`}
-                  >
-                    <td className="py-3.5 px-4.5 font-semibold text-[#374151] flex items-center gap-2">
-                      <span className="text-lg">{rowIcon}</span>
-                      {row.label}
-                    </td>
-                    {data.years.map((yr, yIdx) => {
-                      const val = row[`y${yr.slice(2)}`] || "-";
-                      const isLast = yIdx === data.years.length - 1;
-                      return (
-                        <td
-                          key={yr}
-                          className={`py-3.5 px-4.5 text-center ${isLast ? "font-extrabold text-[#4f46e5] bg-[rgba(99,102,241,0.02)]" : "font-semibold text-[#4b5563]"}`}
-                        >
-                          {val}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
+
     </div>
   );
 };
