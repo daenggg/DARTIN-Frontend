@@ -134,7 +134,6 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
 };
 
 const FinancialsTab: React.FC<FinancialsTabProps> = ({
-  companyName,
   analysisData,
 }) => {
   if (!analysisData || !analysisData.financialInfo || !analysisData.basicInfo) {

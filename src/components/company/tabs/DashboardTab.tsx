@@ -60,7 +60,7 @@ const formatMoney = (val: number): string => {
   return `${Math.round(val / 1e8).toLocaleString()}억원`;
 };
 
-const DashboardTab: React.FC<DashboardTabProps> = ({ companyName, analysisData }) => {
+const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
   if (!analysisData || !analysisData.basicInfo) {
     return <EmptyState />;
   }
