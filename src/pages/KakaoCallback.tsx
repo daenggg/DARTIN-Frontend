@@ -28,7 +28,6 @@ const KakaoCallback = (): React.JSX.Element => {
           const { accessToken, user } = response.data;
           sessionStorage.setItem("accessToken", accessToken);
           sessionStorage.setItem("user", JSON.stringify(user));
-          alert(`${user.nickname}님, 환영합니다!`);
           navigate("/home");
         }
       } catch (error) {

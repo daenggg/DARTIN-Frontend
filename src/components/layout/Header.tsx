@@ -26,7 +26,8 @@ const Header: React.FC<HeaderProps> = ({ userName, onLogout }) => {
           style={{
             fontSize: "22px",
             fontWeight: "700",
-            background: "linear-gradient(135deg, #4285f4 0%, #9b72cb 40%, #d96570 100%)",
+            background:
+              "linear-gradient(135deg, #4285f4 0%, #9b72cb 40%, #d96570 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             letterSpacing: "-0.5px",
@@ -49,7 +50,9 @@ const Header: React.FC<HeaderProps> = ({ userName, onLogout }) => {
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
         <div style={{ fontSize: "14px", color: "#1f1f1f", fontWeight: "500" }}>
           <span style={{ color: "#5f6368" }}>로그인 계정:</span>{" "}
-          <strong style={{ color: "#1f1f1f", fontWeight: "600" }}>{userName}</strong>
+          <strong style={{ color: "#1f1f1f", fontWeight: "600" }}>
+            {userName}
+          </strong>
         </div>
         <button
           onClick={onLogout}

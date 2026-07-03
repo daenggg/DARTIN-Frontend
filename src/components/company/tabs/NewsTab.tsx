@@ -1,125 +1,94 @@
 import React from "react";
 
-const NewsTab: React.FC = () => {
-  const newsList = [
-    {
-      category: "속보",
-      color: "#9b72cb",
-      bgColor: "#f4f0fa",
-      press: "한국경제 • 1시간 전",
-      title: "[속보] 독점 '여론조사 대응 태스크(TF)' 설치에 나선 SK하이닉스... HBM 시장 굳히기 나선다",
-      desc: "SK하이닉스가 글로벌 고대역폭 메모리(HBM) 시장에서의 선점 지위를 유지하고 경쟁사들의 추격을 저지하기 위해 내부 대응 부서 및 리서치 전담 기구를 확대 설치하기로 발표했습니다.",
-      url: "https://www.hankyung.com",
-    },
-    {
-      category: "기술/연구",
-      color: "#4285f4",
-      bgColor: "#f0f4f9",
-      press: "전자신문 • 3시간 전",
-      title: "SK하이닉스, 차세대 'HBM4' 16단 시제품 신공정 개발 착수... 2026년 대량 양산 목표 선점",
-      desc: "패키징 공정 효율 극대화를 위한 어드밴스드 MR-MUF 신소재 기술을 전면 도입하여 두께 제한 한계를 돌파한 16단 적층 시제품 성능 평가에 성공했습니다.",
-      url: "https://www.etnews.com",
-    },
-    {
-      category: "공급망",
-      color: "#4f46e5",
-      bgColor: "#f0effd",
-      press: "연합뉴스 • 12시간 전",
-      title: "SK하이닉스 청주/이천 공장 생산라인 가동률 최대로... 실적 턴어라운드 본궤도 진입",
-      desc: "글로벌 대형 빅테크 기업들의 서버 증설 및 생성형 AI 인프라 고도화 트렌드와 맞물려 메모리 반도체 공장 웨이퍼 가동률이 작년 동기 대비 대폭 향상되었습니다.",
-      url: "https://www.yna.co.kr",
-    },
-    {
-      category: "인사/채용",
-      color: "#0d9488",
-      bgColor: "#f0fdfa",
-      press: "디지털데일리 • 1일 전",
-      title: "SK하이닉스 하반기 대졸 신입 인재 세 자릿수 공채 개시... HBM 수율 관리 연구원 집중 육성",
-      desc: "설계, 소자 공정 개발 뿐만 아니라 수율 안정성을 확보할 데이터 분석 전문가 및 패키징 엔지니어 선발 비율을 전년 대비 30% 이상 증대해 채용을 확대합니다.",
-      url: "https://www.ddaily.co.kr",
-    },
+interface NewsItem {
+  title: string;
+  summary: string;
+  url: string;
+  publishedAt: string;
+}
+
+interface NewsTabProps {
+  analysisData?: {
+    news?: NewsItem[];
+  };
+}
+
+const EmptyState: React.FC = () => (
+  <div className="flex flex-col items-center justify-center py-[120px] px-6 bg-white dark:bg-[#121318] rounded-xl border border-solid border-[#f1f5f9] dark:border-zinc-800 text-[#475569] dark:text-zinc-400 text-center gap-6 font-sans w-full box-border">
+    <div className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+      NO NEWS DATA
+    </div>
+    
+    <div className="flex flex-col gap-2">
+      <div className="font-semibold text-[#0f172a] dark:text-zinc-200 text-lg tracking-tight">
+        데이터 분석 세션 대기 중
+      </div>
+      <div className="text-sm leading-relaxed text-[#64748b] dark:text-zinc-400 max-w-[360px] mx-auto">
+        실시간 기업 공시 정보, 재무 실적 추이 및 미디어 정보 추출을 시작하려면 좌측 대화창에 분석 대상을 입력해 주십시오.
+      </div>
+    </div>
+  </div>
+);
+
+const NewsTab: React.FC<NewsTabProps> = ({ analysisData }) => {
+  if (!analysisData || !analysisData.news) {
+    return <EmptyState />;
+  }
+
+  const categories = [
+    { name: "속보" },
+    { name: "기술/연구" },
+    { name: "공급망" },
+    { name: "인사/채용" },
   ];
 
+  const newsList = analysisData.news.map((item, idx) => {
+    const cat = categories[idx % categories.length];
+    return {
+      category: cat.name,
+      press: `뉴스 • ${item.publishedAt.split("T")[0]}`,
+      title: item.title,
+      desc: item.summary,
+      url: item.url,
+    };
+  });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "'Inter', sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#18181b" }}>
-          실시간 기업 관련 뉴스 피드
-        </h3>
+    <div className="border border-solid border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-[#121318] w-full box-border text-[#18181b] dark:text-[#f4f4f5] text-left flex flex-col font-sans">
+      
+      {/* 타이틀 헤더 바 */}
+      <div className="p-4 px-6 border-b border-solid border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between shrink-0">
+        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+          MEDIA REPORT / 관련 언론사 뉴스 리포트
+        </span>
       </div>
 
-      {newsList.map((news, idx) => (
-        <div
-          key={idx}
-          onClick={() => window.open(news.url, "_blank")}
-          style={{
-            backgroundColor: "#ffffff",
-            borderRadius: "8px",
-            padding: "20px 24px",
-            border: "1px solid #e4e4e7",
-            display: "flex",
-            gap: "20px",
-            alignItems: "center",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.borderColor = "#a1a1aa")}
-          onMouseOut={(e) => (e.currentTarget.style.borderColor = "#e4e4e7")}
-        >
-          {/* 뉴스 이미지 대표 박스 (왼쪽 1:1 배치) */}
+      {/* 뉴스 목록 리스트 */}
+      <div className="flex flex-col w-full">
+        {newsList.map((news, idx) => (
           <div
-            style={{
-              width: "80px",
-              height: "80px",
-              backgroundColor: "#e2e8f0",
-              backgroundImage: "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "20px",
-              flexShrink: 0,
-              border: "1px solid #cbd5e1",
-              boxSizing: "border-box",
-            }}
+            key={idx}
+            onClick={() => window.open(news.url, "_blank")}
+            className="p-6 border-b border-solid border-zinc-200 dark:border-zinc-800 last:border-none flex flex-col items-start cursor-pointer transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 box-border text-left"
           >
-            📰
-          </div>
-
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: "700",
-                  color: news.color,
-                  backgroundColor: news.bgColor,
-                  padding: "3px 8px",
-                  borderRadius: "4px",
-                }}
-              >
+            <div className="flex items-center gap-3 mb-2.5 text-xs">
+              <span className="text-[9px] font-bold py-0.5 px-2.5 rounded-full border border-solid border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 tracking-wider">
                 {news.category}
               </span>
-              <span style={{ fontSize: "12px", color: "#71717a" }}>{news.press}</span>
+              <span className="text-zinc-400 dark:text-zinc-500 font-semibold">{news.press}</span>
             </div>
-            <h4
-              style={{
-                margin: "0 0 6px 0",
-                fontSize: "14px",
-                fontWeight: "700",
-                color: "#18181b",
-                lineHeight: "1.4",
-                textAlign: "left",
-              }}
-            >
+            
+            <h4 className="m-0 mb-2 text-md font-bold text-zinc-950 dark:text-zinc-50 leading-snug hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150">
               {news.title}
             </h4>
-            <p style={{ margin: 0, fontSize: "12px", color: "#71717a", lineHeight: "1.6", textAlign: "left" }}>
+            
+            <p className="m-0 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
               {news.desc}
             </p>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
     </div>
   );
 };

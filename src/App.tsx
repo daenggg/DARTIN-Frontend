@@ -1,8 +1,9 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import KakaoCallback from "./pages/KakaoCallback";
 import Home from "./pages/Home";
+import NotFound from "./pages/NotFound";
 
 function App(): React.JSX.Element {
   return (
@@ -17,8 +18,8 @@ function App(): React.JSX.Element {
         {/* 로그인 완료 후 랜딩 페이지 */}
         <Route path="/home" element={<Home />} />
 
-        {/* 엉뚱한 주소 차단 */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* 엉뚱한 주소 차단: 404 페이지 노출 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

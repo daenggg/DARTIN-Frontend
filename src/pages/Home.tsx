@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 // 레이아웃 & 공통 컴포넌트 임포트
 import ChatHistorySidebar from "../components/chat/ChatHistorySidebar";
@@ -11,23 +10,61 @@ import DashboardTab from "../components/company/tabs/DashboardTab";
 import CompanyInfoTab from "../components/company/tabs/CompanyInfoTab";
 import FinancialsTab from "../components/company/tabs/FinancialsTab";
 import NewsTab from "../components/company/tabs/NewsTab";
-import AIAnalysisTab from "../components/company/tabs/AIAnalysisTab";
+
+import { fetchCompanyAnalysis } from "../services/companyApi";
+import type {
+  CompanyBasicInfo,
+  FinancialInfoMap,
+  NewsItem,
+  JobLinks,
+} from "../services/companyApi";
+import axios from "axios";
 
 interface Message {
   sender: "user" | "ai";
   text: string;
+  isStreaming?: boolean;
+  isStatus?: boolean;
+  candidates?: Array<{ corp_name: string; corp_code: string }>;
 }
 
 const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("사용자");
   const [activeTab, setActiveTab] = useState<string>("대시보드");
-  
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => 
+    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  );
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [selectedCompany, setSelectedCompany] = useState<string>("SK하이닉스");
-  const [leftWidth, setLeftWidth] = useState<number>(420); // 기본값 420px
+  const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
+  const [leftWidth, setLeftWidth] = useState<number>(() =>
+    Math.round(window.innerWidth * 0.35),
+  ); // 기본 비율 3.5 : 6.5 (채팅 3.5 : 대시보드 6.5)
   const [isResizing, setIsResizing] = useState<boolean>(false);
+
+  // 실시간 수집 데이터 상태 관리
+  const [analysisData, setAnalysisData] = useState<
+    | {
+        basicInfo?: CompanyBasicInfo;
+        financialInfo?: FinancialInfoMap;
+        news?: NewsItem[];
+        aiAnalysis?: string;
+        jobLinks?: JobLinks;
+        sessionId?: string;
+      }
+    | undefined
+  >(undefined);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -64,16 +101,8 @@ const Home = (): React.JSX.Element => {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
-      text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오."
+      text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
     },
-    {
-      sender: "user",
-      text: "SK하이닉스 분석자료 조회해줘"
-    },
-    {
-      sender: "ai",
-      text: "SK하이닉스 분석 데이터를 구성했습니다. 상단 탭을 통해 분야별 정밀 리포트를 확인하실 수 있습니다."
-    }
   ]);
   const [inputValue, setInputValue] = useState<string>("");
 
@@ -89,60 +118,418 @@ const Home = (): React.JSX.Element => {
     }
   }, []);
 
+  // 새로고침 시 세션 유지 및 복원 처리
+  useEffect(() => {
+    const restoreSession = async () => {
+      const storedSessionId = sessionStorage.getItem("currentSessionId");
+      if (storedSessionId && storedSessionId !== "New") {
+        const token = sessionStorage.getItem("accessToken");
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+        try {
+          const res = await axios.get(
+            `${BACKEND_URL}/api/chat/sessions/${storedSessionId}`,
+            {
+              headers: { Authorization: token ? `Bearer ${token}` : "" },
+            },
+          );
+          const detail = res.data;
+          if (detail) {
+            setAnalysisData({
+              basicInfo: detail.company.basicInfo,
+              financialInfo: detail.company.financialInfo,
+              news: detail.company.news,
+              aiAnalysis: detail.company.aiAnalysis,
+              jobLinks: detail.company.jobLinks,
+              sessionId: detail.sessionId,
+            });
+            setSelectedCompany(detail.company.basicInfo.companyName);
+
+            // 복원된 채팅 기록 매핑
+            const mappedMsgs = detail.chat.messages.map((m: any) => ({
+              sender: m.role === "user" ? "user" : "ai",
+              text: m.content,
+            }));
+            setMessages(
+              mappedMsgs.length > 0
+                ? mappedMsgs
+                : [
+                    {
+                      sender: "ai",
+                      text: `"${detail.company.basicInfo.companyName}" 분석 대화가 복구되었습니다.`,
+                    },
+                  ],
+            );
+          }
+        } catch (err) {
+          console.error("Mount session restoration failed:", err);
+          sessionStorage.removeItem("currentSessionId");
+        }
+      }
+    };
+
+    restoreSession();
+  }, []);
+
   const handleLogout = async () => {
     const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
-      await axios.post(`${BACKEND_URL}/api/auth/logout`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
+      await axios.post(
+        `${BACKEND_URL}/api/auth/logout`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+      );
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
       sessionStorage.removeItem("accessToken");
       sessionStorage.removeItem("user");
+      sessionStorage.removeItem("currentSessionId");
       navigate("/");
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  // 기업 후보 선택 후 데이터 로드 핸들러
+  const handleSelectCandidate = async (corpCode: string, corpName: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: `[선택] ${corpName}` },
+    ]);
+    setSelectedCompany(corpName);
+    setAnalysisData(undefined); // 대기 상태로 전환
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: `🔄 "${corpName}"의 실시간 데이터를 수집 및 분석하는 중입니다. 잠시만 기다려 주세요...`,
+        isStreaming: true,
+      },
+    ]);
+
+    try {
+      const data = await fetchCompanyAnalysis(corpCode);
+
+      // 상태 저장
+      setAnalysisData({
+        basicInfo: data.basicInfo,
+        financialInfo: data.financialInfo,
+        news: data.news,
+        aiAnalysis: data.aiAnalysis,
+        jobLinks: data.jobLinks,
+        sessionId: data.session?.sessionId,
+      });
+
+      if (data.session?.sessionId) {
+        sessionStorage.setItem("currentSessionId", data.session.sessionId);
+      }
+
+      setMessages((prev) => {
+        const listWithoutLoading = prev.slice(0, -1);
+        return [
+          ...listWithoutLoading,
+          {
+            sender: "ai",
+            text: `✨ "${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
+          },
+        ];
+      });
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => {
+        const listWithoutLoading = prev.slice(0, -1);
+        return [
+          ...listWithoutLoading,
+          {
+            sender: "ai",
+            text: "⚠️ 기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+          },
+        ];
+      });
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
     const userMsg = inputValue.trim();
-    setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
+    setMessages((prev) => [...prev, { sender: "user", text: userMsg }]);
     setInputValue("");
 
-    setTimeout(() => {
-      setSelectedCompany(userMsg);
-      setMessages(prev => [
-        ...prev,
-        {
-          sender: "ai",
-          text: `"${userMsg}" 보고서가 갱신되었습니다. 상단 탭에서 상세 내용을 확인하십시오.`
+    // 1. 이미 세션이 열린 상태에서의 후속 질문 (스트리밍)
+    if (analysisData?.sessionId) {
+      const token = sessionStorage.getItem("accessToken");
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+      const sessionUrl = `${BACKEND_URL}/api/chat/sessions/${analysisData.sessionId}/messages`;
+
+      try {
+        const response = await fetch(sessionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+            Accept: "text/event-stream",
+          },
+          body: JSON.stringify({ question: userMsg }),
+        });
+
+        if (!response.ok) throw new Error("Failed to send message");
+        if (!response.body) throw new Error("No response body");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: "답변을 준비하고 있습니다",
+            isStreaming: true,
+            isStatus: true,
+          },
+        ]);
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            if (trimmed.startsWith("data:")) {
+              const rawData = trimmed.substring(5).trim();
+              try {
+                const parsed = JSON.parse(rawData);
+                const eventType = parsed.type;
+                const eventData = parsed.data;
+
+                if (eventType === "message") {
+                  setMessages((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.sender === "ai" && last.isStreaming) {
+                      if (last.isStatus) {
+                        return [
+                          ...prev.slice(0, -1),
+                          { ...last, text: eventData, isStatus: false },
+                        ];
+                      }
+                      return [
+                        ...prev.slice(0, -1),
+                        { ...last, text: last.text + eventData },
+                      ];
+                    }
+                    return prev;
+                  });
+                } else if (eventType === "status") {
+                  setMessages((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.sender === "ai" && last.isStreaming) {
+                      return [
+                        ...prev.slice(0, -1),
+                        { ...last, text: eventData, isStatus: true },
+                      ];
+                    }
+                    return prev;
+                  });
+                }
+              } catch (e) {
+                setMessages((prev) => {
+                  const last = prev[prev.length - 1];
+                  if (last && last.sender === "ai" && last.isStreaming) {
+                    if (last.isStatus) {
+                      return [
+                        ...prev.slice(0, -1),
+                        { ...last, text: rawData, isStatus: false },
+                      ];
+                    }
+                    return [
+                      ...prev.slice(0, -1),
+                      { ...last, text: last.text + rawData },
+                    ];
+                  }
+                  return prev;
+                });
+              }
+            }
+          }
         }
-      ]);
-    }, 400);
+
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last && last.sender === "ai" && last.isStreaming) {
+            return [...prev.slice(0, -1), { ...last, isStreaming: false }];
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.error(err);
+        setMessages((prev) => [
+          ...prev,
+          { sender: "ai", text: "⚠️ 대화 응답을 수신하는 데 실패했습니다." },
+        ]);
+      }
+      return;
+    }
+
+    // 2. 세션이 없는 경우 최초 기업명 추출 후보 검색
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: "🔍 입력하신 기업의 후보 목록을 검색하는 중입니다...",
+        isStreaming: true,
+      },
+    ]);
+
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
+        params: { search_query: userMsg },
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+
+      const candidates = res.data?.companies;
+
+      setMessages((prev) => {
+        const listWithoutLoading = prev.slice(0, -1);
+        if (Array.isArray(candidates) && candidates.length > 0) {
+          return [
+            ...listWithoutLoading,
+            {
+              sender: "ai",
+              text: `"${userMsg}"에 대한 후보 기업 검색 결과입니다. 분석을 원하는 기업을 선택해 주세요:`,
+              candidates: candidates.map((c: any) => ({
+                corp_name: c.corpName,
+                corp_code: c.corpCode,
+              })),
+            },
+          ];
+        } else {
+          return [
+            ...listWithoutLoading,
+            {
+              sender: "ai",
+              text: `🤔 "${userMsg}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다.\n\n공식 기업명(예: 삼성전자, 카카오) 또는 대표 종목코드(예: 005930)를 명확하게 입력해 주시기 바랍니다.\n\n아래의 주요 인기 기업 목록을 클릭하여 즉시 기업 정보 분석 및 실시간 리포트를 탐색해 보실 수도 있습니다:`,
+              candidates: [
+                { corp_name: "삼성전자", corp_code: "00126380" },
+                { corp_name: "SK하이닉스", corp_code: "00164779" },
+                { corp_name: "현대자동차", corp_code: "00164742" },
+                { corp_name: "카카오", corp_code: "00258865" },
+              ],
+            },
+          ];
+        }
+      });
+    } catch (err: any) {
+      console.error(err);
+      setMessages((prev) => {
+        const listWithoutLoading = prev.slice(0, -1);
+        const status = err.response?.status;
+        const detail = err.response?.data?.detail;
+
+        if (status === 400 || status === 404) {
+          return [
+            ...listWithoutLoading,
+            {
+              sender: "ai",
+              text: `🤔 "${userMsg}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다.\n\n공식 기업명(예: 삼성전자, 카카오) 또는 대표 종목코드(예: 005930)를 명확하게 입력해 주시기 바랍니다.\n\n아래의 주요 인기 기업 목록을 클릭하여 즉시 기업 정보 분석 및 실시간 리포트를 탐색해 보실 수도 있습니다:`,
+              candidates: [
+                { corp_name: "삼성전자", corp_code: "00126380" },
+                { corp_name: "SK하이닉스", corp_code: "00164779" },
+                { corp_name: "현대자동차", corp_code: "00164742" },
+                { corp_name: "카카오", corp_code: "00258865" },
+              ],
+            },
+          ];
+        }
+
+        return [
+          ...listWithoutLoading,
+          {
+            sender: "ai",
+            text: `⚠️ 후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`,
+          },
+        ];
+      });
+    }
   };
 
-  const handleSelectHistory = (company: string) => {
-    if (company === "New") {
+  const handleSelectHistory = async (
+    sessionId: string,
+    companyName: string,
+  ) => {
+    if (sessionId === "New") {
       setMessages([
         {
           sender: "ai",
-          text: "기업명을 입력하시면 정밀 데이터 수집 및 분석을 시작합니다."
-        }
+          text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+        },
       ]);
       setSelectedCompany("새 문서");
+      setAnalysisData(undefined);
+      sessionStorage.removeItem("currentSessionId");
     } else {
-      setSelectedCompany(company);
-      setMessages([
-        {
-          sender: "ai",
-          text: `이전 조회 기록에서 "${company}" 리포트를 복원했습니다.`
+      setSelectedCompany(companyName);
+      sessionStorage.setItem("currentSessionId", sessionId);
+
+      const token = sessionStorage.getItem("accessToken");
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+      try {
+        const res = await axios.get(
+          `${BACKEND_URL}/api/chat/sessions/${sessionId}`,
+          {
+            headers: { Authorization: token ? `Bearer ${token}` : "" },
+          },
+        );
+        const detail = res.data;
+        if (detail) {
+          setAnalysisData({
+            basicInfo: detail.company.basicInfo,
+            financialInfo: detail.company.financialInfo,
+            news: detail.company.news,
+            aiAnalysis: detail.company.aiAnalysis,
+            jobLinks: detail.company.jobLinks,
+            sessionId: detail.sessionId,
+          });
+
+          // 복원된 채팅 메시지 매핑 (role -> sender)
+          const mappedMsgs = detail.chat.messages.map((m: any) => ({
+            sender: m.role === "user" ? "user" : "ai",
+            text: m.content,
+          }));
+
+          setMessages(
+            mappedMsgs.length > 0
+              ? mappedMsgs
+              : [
+                  {
+                    sender: "ai",
+                    text: `"${companyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.`,
+                  },
+                ],
+          );
         }
-      ]);
+      } catch (err) {
+        console.error("Failed to load session details:", err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: "⚠️ 대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
+          },
+        ]);
+      }
     }
   };
 
@@ -152,79 +539,53 @@ const Home = (): React.JSX.Element => {
     { id: "기업정보", label: "기업정보" },
     { id: "재무제표", label: "재무제표" },
     { id: "최신뉴스", label: "최신뉴스" },
-    { id: "AI종합분석", label: "AI종합분석" }
   ];
 
   // 활성화 탭별 렌더링 매핑
   const renderTabContent = () => {
     switch (activeTab) {
       case "대시보드":
-        return <DashboardTab companyName={selectedCompany} />;
+        return (
+          <DashboardTab
+            companyName={selectedCompany}
+            analysisData={analysisData}
+          />
+        );
       case "기업정보":
-        return <CompanyInfoTab />;
+        return <CompanyInfoTab analysisData={analysisData} />;
       case "재무제표":
-        return <FinancialsTab />;
+        return (
+          <FinancialsTab
+            companyName={selectedCompany}
+            analysisData={analysisData}
+          />
+        );
       case "최신뉴스":
-        return <NewsTab />;
-      case "AI종합분석":
-        return <AIAnalysisTab />;
+        return <NewsTab analysisData={analysisData} />;
       default:
-        return <DashboardTab companyName={selectedCompany} />;
+        return (
+          <DashboardTab
+            companyName={selectedCompany}
+            analysisData={analysisData}
+          />
+        );
     }
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "#fcfcfc",
-        fontFamily: "'Inter', sans-serif",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflow: "hidden",
-        boxSizing: "border-box",
-        color: "#1a1a1a"
-      }}
-    >
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 5px;
-          height: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #cbd5e1;
-        }
-      `}</style>
-
+    <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen flex bg-[#fcfcfc] dark:bg-[#0b0c10] font-sans overflow-hidden box-border text-[#1a1a1a] dark:text-[#f4f4f5]">
       <ChatHistorySidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onSelectHistory={handleSelectHistory}
+        activeSessionId={analysisData?.sessionId}
       />
 
       <div
-        style={{
-          display: "flex",
-          flex: 1,
-          height: "100%",
-          overflow: "hidden",
-          boxSizing: "border-box",
-          userSelect: isResizing ? "none" : "auto",
-        }}
+        className="flex flex-1 h-full overflow-hidden box-border"
+        style={{ userSelect: isResizing ? "none" : "auto" }}
       >
-        <div style={{ width: `${leftWidth}px`, flexShrink: 0, height: "100%" }}>
+        <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full">
           <ChatArea
             messages={messages}
             inputValue={inputValue}
@@ -233,125 +594,65 @@ const Home = (): React.JSX.Element => {
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             companyName={selectedCompany}
+            onSelectCandidate={handleSelectCandidate}
           />
         </div>
 
         {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
         <div
           onMouseDown={handleMouseDown}
-          style={{
-            width: "5px",
-            cursor: "col-resize",
-            backgroundColor: isResizing ? "#3b82f6" : "transparent",
-            borderLeft: "1px solid #e2e8f0",
-            transition: "background-color 0.15s ease",
-            height: "100%",
-            flexShrink: 0,
-            zIndex: 10,
-            userSelect: "none",
-          }}
+          className={`w-[5px] cursor-col-resize border-l border-solid border-l-[#e2e8f0] dark:border-l-zinc-800 transition-colors duration-150 h-full shrink-0 z-10 select-none ${
+            isResizing ? "bg-blue-500" : "bg-transparent"
+          }`}
         />
 
-        <div
-          style={{
-            flex: 1,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#ffffff",
-            overflow: "hidden",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderBottom: "1px solid #e2e8f0",
-              padding: "0 24px",
-              height: "56px",
-              backgroundColor: "#ffffff",
-              flexShrink: 0
-            }}
-          >
-            <div style={{ display: "flex", gap: "24px", height: "100%" }}>
+        <div className="flex-1 h-full flex flex-col bg-white dark:bg-[#121318] overflow-hidden box-border">
+          <div className="flex items-center justify-between border-b border-solid border-[#e2e8f0] dark:border-zinc-800 px-6 h-11 bg-white dark:bg-[#121318] shrink-0">
+            <div className="flex gap-6 h-full">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      padding: "0 4px",
-                      fontSize: "13px",
-                      fontWeight: isActive ? "600" : "400",
-                      color: isActive ? "#1a1a1a" : "#71717a",
-                      cursor: "pointer",
-                      height: "100%",
-                      position: "relative",
-                      display: "flex",
-                      alignItems: "center",
-                      transition: "color 0.15s ease-out"
-                    }}
+                    className={`bg-transparent border-none px-1 text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out ${
+                      isActive
+                        ? "font-semibold text-[#1a1a1a] dark:text-[#f4f4f5]"
+                        : "font-normal text-[#71717a] dark:text-zinc-400 hover:text-[#1a1a1a] dark:hover:text-zinc-50"
+                    }`}
                   >
                     {tab.label}
                     {isActive && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: "2px",
-                          backgroundColor: "#1a1a1a"
-                        }}
-                      />
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1a1a1a] dark:bg-[#f4f4f5]" />
                     )}
                   </button>
                 );
               })}
             </div>
-            
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "12px", color: "#71717a" }}>
+
+            <div className="flex items-center gap-4 text-xs text-[#71717a] dark:text-zinc-400">
               <span>{userName}님</span>
               <button
                 onClick={handleLogout}
-                style={{
-                  border: "1px solid #e2e8f0",
-                  backgroundColor: "transparent",
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  color: "#71717a",
-                  transition: "all 0.15s ease"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = "#cbd5e1";
-                  e.currentTarget.style.color = "#1a1a1a";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                  e.currentTarget.style.color = "#71717a";
-                }}
+                className="border border-solid border-[#e2e8f0] dark:border-zinc-800 bg-transparent py-1 px-2.5 rounded text-xs text-[#71717a] dark:text-zinc-400 cursor-pointer transition-colors duration-150 hover:border-[#cbd5e1] dark:hover:border-zinc-600 hover:text-[#1a1a1a] dark:hover:text-zinc-50"
               >
                 로그아웃
+              </button>
+              <button
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="border border-solid border-[#e2e8f0] dark:border-zinc-800 bg-transparent p-1.5 rounded-lg cursor-pointer text-[#71717a] dark:text-zinc-400 hover:border-[#cbd5e1] dark:hover:border-zinc-600 hover:text-[#1a1a1a] dark:hover:text-zinc-50 flex items-center justify-center"
+                title={theme === 'light' ? '다크모드 켜기' : '라이트모드 켜기'}
+              >
+                {theme === 'light' ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                )}
               </button>
             </div>
           </div>
 
-          <main
-            style={{
-              flex: 1,
-              padding: "24px 32px",
-              overflowY: "auto",
-              boxSizing: "border-box"
-            }}
-            className="custom-scrollbar"
-          >
+          <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
             {renderTabContent()}
           </main>
         </div>

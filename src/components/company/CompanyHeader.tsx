@@ -14,75 +14,35 @@ const CompanyHeader: React.FC<CompanyHeaderProps> = ({
   const isSamsung = companyName.includes("삼성");
 
   return (
-    <div
-      style={{
-        backgroundColor: "#ffffff",
-        borderRadius: "24px", // 더 둥근 모서리
-        padding: "24px 28px",
-        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.02)",
-        border: "1px solid #e3e3e3",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        fontFamily: "'Outfit', 'Inter', sans-serif",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+    <div className="bg-white rounded-[24px] py-3.5 px-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-solid border-[#e3e3e3] flex justify-between items-center font-sans">
+      <div className="flex items-center gap-4">
         {/* 기업 브랜드 로고 */}
         <div
           onClick={onLogoClick}
-          style={{
-            width: "68px",
-            height: "68px",
-            borderRadius: "16px",
-            border: "1px solid #f0f4f9",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            backgroundColor: "#f0f4f9",
-            padding: "4px",
-            boxSizing: "border-box",
-            transition: "transform 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-          onMouseOut={(e) => (e.currentTarget.style.transform = "none")}
+          className="w-14 h-14 rounded-2xl border border-solid border-[#f0f4f9] flex items-center justify-center cursor-pointer bg-[#f0f4f9] p-1 box-border transition-transform duration-200 hover:scale-105"
         >
           {isSamsung ? (
-            <div
-              style={{
-                width: "44px",
-                height: "24px",
-                backgroundColor: "#0a58ca",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#ffffff",
-                fontSize: "7px",
-                fontWeight: "900",
-              }}
-            >
+            <div className="w-9 h-5 bg-[#0a58ca] rounded-full flex items-center justify-center text-white text-[9px] font-black">
               SAMSUNG
             </div>
           ) : (
-            <div style={{ fontSize: "14px", fontWeight: "bold", color: "#e11d48" }}>
+            <div className="text-lg font-bold text-[#e11d48]">
               SK
             </div>
           )}
         </div>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "#1f1f1f" }}>
+        <div className="text-left">
+          <h2 className="m-0 text-2xl font-bold text-[#1f1f1f]">
             {companyName}
           </h2>
-          <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#5f6368" }}>
+          <p className="mt-1 text-sm text-[#5f6368] m-0">
             {description}
           </p>
         </div>
       </div>
 
       {/* 채용 링크 (Gemini 캡슐 스타일 아웃라인 버튼) */}
-      <div style={{ display: "flex", gap: "10px" }}>
+      <div className="flex gap-2.5">
         {["사람인 공고 🔗", "잡코리아 공고 🔗", "원티드 공고 🔗"].map((text, idx) => (
           <button
             key={idx}
@@ -96,25 +56,7 @@ const CompanyHeader: React.FC<CompanyHeaderProps> = ({
                 "_blank"
               )
             }
-            style={{
-              border: "1px solid #cbd5e1",
-              borderRadius: "100px", // 완전히 둥근 알약형
-              padding: "8px 16px",
-              fontSize: "12px",
-              fontWeight: "600",
-              color: "#3c4043",
-              backgroundColor: "#ffffff",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = "#f0f4f9";
-              e.currentTarget.style.borderColor = "#a8a8a8";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "#ffffff";
-              e.currentTarget.style.borderColor = "#cbd5e1";
-            }}
+            className="border border-solid border-[#cbd5e1] rounded-full py-1.5 px-3.5 text-sm font-semibold text-[#3c4043] bg-white cursor-pointer transition-all duration-200 hover:bg-[#f0f4f9] hover:border-[#a8a8a8]"
           >
             {text}
           </button>

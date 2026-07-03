@@ -1,338 +1,256 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+interface ChatSession {
+  sessionId: string;
+  companyName: string;
+  createdAt: string;
+}
 
 interface ChatHistorySidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectHistory: (company: string) => void;
+  onSelectHistory: (sessionId: string, companyName: string) => void;
+  activeSessionId?: string;
 }
 
 const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   isOpen,
   onClose,
   onSelectHistory,
+  activeSessionId,
 }) => {
-  const [pinnedIds, setPinnedIds] = useState<number[]>([1, 2]); // SK하이닉스, 삼성전자 고정 예시
-  const [activeItem, setActiveItem] = useState<string>("SK하이닉스");
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
-
-  const histories = [
-    { id: 1, company: "SK하이닉스", isPinned: true },
-    { id: 2, company: "삼성전자", isPinned: true },
-    { id: 3, company: "현대자동차", isPinned: false },
-    { id: 4, company: "네이버 주식회사", isPinned: false },
-    { id: 5, company: "카카오 공동체 채용공고 분석", isPinned: false },
-  ];
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleCloseMenu = () => setActiveMenuId(null);
-    document.addEventListener("click", handleCloseMenu);
-    return () => document.removeEventListener("click", handleCloseMenu);
-  }, []);
+    if (isOpen) {
+      fetchSessions();
+      fetchPinnedSessions();
+    }
+  }, [isOpen]);
 
-  const togglePin = (id: number, e: React.MouseEvent) => {
+  const fetchSessions = async () => {
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/chat/sessions`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      if (Array.isArray(res.data)) {
+        setSessions(res.data);
+      }
+    } catch (err) {
+      console.error("실시간 세션 조회 실패:", err);
+    }
+  };
+
+  const fetchPinnedSessions = async () => {
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/chat/pins`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      if (Array.isArray(res.data)) {
+        setPinnedIds(res.data);
+      }
+    } catch (err) {
+      console.error("고정 세션 조회 실패:", err);
+    }
+  };
+
+  const togglePin = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setPinnedIds(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+    const isPinned = pinnedIds.includes(sessionId);
+
+    try {
+      if (isPinned) {
+        await axios.delete(`${BACKEND_URL}/api/chat/pins/${sessionId}`, {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+        });
+        setPinnedIds((prev) => prev.filter((id) => id !== sessionId));
+      } else {
+        await axios.post(
+          `${BACKEND_URL}/api/chat/pins/${sessionId}`,
+          {},
+          {
+            headers: { Authorization: token ? `Bearer ${token}` : "" },
+          },
+        );
+        setPinnedIds((prev) => [...prev, sessionId]);
+      }
+    } catch (err) {
+      console.error("고정 토글 실패:", err);
+    }
   };
 
-  const handleItemClick = (company: string) => {
-    setActiveItem(company);
-    onSelectHistory(company);
-    onClose(); // 오버레이 레이아웃이므로 선택 시 사이드바 닫아주기
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("이 대화 내역을 삭제하시겠습니까?")) return;
+
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+    try {
+      await axios.delete(`${BACKEND_URL}/api/chat/sessions/${sessionId}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      if (activeSessionId === sessionId) {
+        onSelectHistory("New", "새 문서");
+      }
+    } catch (err) {
+      console.error("세션 삭제 실패:", err);
+    }
   };
 
-  const dropdownItemStyle: React.CSSProperties = {
-    padding: "6px 8px",
-    border: "none",
-    backgroundColor: "transparent",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "11px",
-    fontWeight: "400",
-    color: "#18181b",
-    textAlign: "left",
-    width: "100%",
-    transition: "background-color 0.15s",
+  const handleItemClick = (sessionId: string, companyName: string) => {
+    onSelectHistory(sessionId, companyName);
+    onClose();
   };
+
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const aPinned = pinnedIds.includes(a.sessionId) ? 1 : 0;
+    const bPinned = pinnedIds.includes(b.sessionId) ? 1 : 0;
+    if (aPinned !== bPinned) return bPinned - aPinned;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return (
     <>
-      {/* 백드롭 레이어: 전체화면을 다 덮음 */}
       {isOpen && (
         <div
           onClick={onClose}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.05)",
-            zIndex: 999,
-          }}
+          className="fixed inset-0 bg-black/40 z-[990] transition-opacity duration-200"
         />
       )}
 
       <aside
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: isOpen ? "280px" : "0px",
-          opacity: isOpen ? 1 : 0,
-          overflow: "hidden",
-          height: "100vh",
-          backgroundColor: "#ffffff",
+          width: "260px",
+          transform: isOpen ? "translateX(0)" : "translateX(-100%)",
           borderRight: isOpen ? "1px solid #cbd5e1" : "none",
-          transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 1000, // 가장 우선 순위가 높은 레이어 설정
-          boxSizing: "border-box",
-          fontFamily: "'Inter', sans-serif",
           boxShadow: isOpen ? "4px 0 24px rgba(0, 0, 0, 0.08)" : "none",
         }}
+        className="fixed top-0 left-0 h-screen bg-white dark:bg-[#121318] dark:border-r dark:border-zinc-800 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col z-[1000] box-border font-sans overflow-hidden"
       >
         {/* 헤더 및 닫기 버튼 */}
-        <div
-          style={{
-            padding: "20px 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span style={{ fontWeight: "700", fontSize: "15px", color: "#1f1f1f" }}>
+        <div className="p-5 px-6 flex justify-between items-center whitespace-nowrap">
+          <span className="font-bold text-lg text-[#1f1f1f] dark:text-[#f4f4f5]">
             최근 분석 목록
           </span>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#5f6368",
-              cursor: "pointer",
-              fontSize: "16px",
-              fontWeight: "bold",
-              padding: "4px 8px",
-              borderRadius: "50%",
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f0f4f9")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-          >
-            ✕
-          </button>
         </div>
 
-        {/* 새 대화 버튼 (깔끔한 그레이 아웃라인 알약형 버튼) */}
-        <div style={{ padding: "0 16px 16px 16px", whiteSpace: "nowrap" }}>
+        {/* 새 대화 버튼 */}
+        <div className="p-4 pt-0 whitespace-nowrap">
           <button
             onClick={() => {
-              onSelectHistory("New");
+              onSelectHistory("New", "새 문서");
               onClose();
             }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              width: "100%",
-              padding: "10px 0",
-              backgroundColor: "#f0f4f9",
-              border: "1px solid #cbd5e1",
-              borderRadius: "100px",
-              color: "#1f1f1f",
-              fontWeight: "600",
-              fontSize: "13px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e3e3e3")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f0f4f9")}
+            className="flex items-center justify-center gap-1 w-full bg-[#f0f4f9] dark:bg-zinc-800 border border-solid border-[#cbd5e1] dark:border-zinc-700 rounded-full text-[#1f1f1f] dark:text-zinc-100 text-md cursor-pointer transition-all duration-200 hover:bg-[#e3e3e3] dark:hover:bg-zinc-700"
           >
-            <span>+</span> 새 분석 요청
+            <span>+ 새 채팅</span>
           </button>
         </div>
 
+        {/* 구분선 */}
+        <div className="mx-4 mb-3 border-t border-solid border-[#e4e4e7] dark:border-zinc-800" />
+
         {/* 히스토리 목록 */}
-        <div
-          className="custom-scrollbar"
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "0 12px 16px 12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-          }}
-        >
-          {histories.map((item) => {
-            const isPinned = pinnedIds.includes(item.id);
-            const isActive = activeItem === item.company;
-            const isHovered = hoveredId === item.id;
+        <div className="custom-scrollbar flex-1 overflow-y-auto px-3 flex flex-col">
+          {sortedSessions.length === 0 ? (
+            <div className="text-xs text-[#a1a1aa] py-6 text-center">
+              분석 이력이 존재하지 않습니다.
+            </div>
+          ) : (
+            sortedSessions.map((item) => {
+              const isPinned = pinnedIds.includes(item.sessionId);
+              const isActive = activeSessionId === item.sessionId;
+              const isHovered = hoveredId === item.sessionId;
 
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleItemClick(item.company)}
-                onMouseEnter={() => setHoveredId(item.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  backgroundColor: isActive ? "#f4f4f5" : "transparent",
-                  cursor: "pointer",
-                  transition: "all 0.1s ease",
-                  whiteSpace: "nowrap",
-                  fontSize: "12px",
-                  fontWeight: isActive ? "600" : "400",
-                  color: isActive ? "#18181b" : "#71717a",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "6px",
-                  position: "relative",
-                }}
-                onMouseOver={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = "#fafafa";
-                    e.currentTarget.style.color = "#18181b";
+              return (
+                <div
+                  key={item.sessionId}
+                  onClick={() =>
+                    handleItemClick(item.sessionId, item.companyName)
                   }
-                }}
-                onMouseOut={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "#71717a";
-                  }
-                }}
-              >
-                <span
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    flex: 1,
-                    textAlign: "left"
-                  }}
+                  onMouseEnter={() => setHoveredId(item.sessionId)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  className={`pl-3 mb-1.5 h-6 rounded-md cursor-pointer transition-all duration-150 flex items-center justify-between gap-1.5 relative border-l-[3px] border-solid box-border text-sm ${
+                    isActive
+                      ? "bg-[#f4f4f5] dark:bg-zinc-800 border-l-[#18181b] dark:border-l-zinc-100 text-[#18181b] dark:text-[#f4f4f5] font-semibold"
+                      : "border-l-transparent text-[#71717a] dark:text-zinc-400 font-normal hover:bg-[#fafafa] dark:hover:bg-zinc-900/50 hover:text-[#18181b] dark:hover:text-zinc-50 hover:border-l-[#e4e4e7] dark:hover:border-l-zinc-700"
+                  }`}
                 >
-                  {item.company}
-                </span>
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap flex-1 text-left">
+                    {item.companyName}
+                  </span>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
-                  {isHovered ? (
-                    /* 호버 시 나타나는 점 세개 버튼 */
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMenuId(activeMenuId === item.id ? null : item.id);
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "2px 4px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        color: "#71717a",
-                        transition: "all 0.15s ease",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = "#e4e4e7";
-                        e.currentTarget.style.color = "#18181b";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "#71717a";
-                      }}
-                    >
-                      ⋮
-                    </button>
-                  ) : (
-                    /* 고정 핀 표시 (고정 상태이면서 호버되지 않았을 때만 노출) */
-                    isPinned && (
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="#18181b"
-                        stroke="#71717a"
-                        strokeWidth="2"
-                        style={{ flexShrink: 0 }}
+                  <div
+                    className="flex items-center gap-1.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {isHovered ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(
+                            activeMenuId === item.sessionId
+                              ? null
+                              : item.sessionId,
+                          );
+                        }}
+                        className="bg-transparent border-none cursor-pointer flex items-center justify-center h-6 w-6 rounded text-sm text-[#71717a] dark:text-zinc-400 transition-all duration-150 hover:bg-[#e4e4e7] dark:hover:bg-zinc-800 hover:text-[#18181b] dark:hover:text-zinc-50"
                       >
-                        <line x1="18" y1="8" x2="22" y2="12"></line>
-                        <line x1="12" y1="2" x2="22" y2="12"></line>
-                        <path d="M12 2L2 12h5l9 9v-5z"></path>
-                      </svg>
-                    )
+                        ⋮
+                      </button>
+                    ) : (
+                      isPinned && (
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="12"
+                          height="12"
+                          fill="#71717a"
+                          className="shrink-0 mr-3"
+                        >
+                          <path d="M16 12V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v8l-2 2v2h5.2v6l1.3 1.3L13.8 18v-2H19v-2l-2-2z" />
+                        </svg>
+                      )
+                    )}
+                  </div>
+
+                  {/* 드롭다운 메뉴 */}
+                  {activeMenuId === item.sessionId && (
+                    <div className="absolute right-3 top-7 bg-white dark:bg-zinc-900 shadow-[0_4px_20px_rgba(0,0,0,0.08)] rounded-md p-1 z-[1010] w-[100px] border border-solid border-[#e4e4e7] dark:border-zinc-800 flex flex-col gap-0.5">
+                      <button
+                        onClick={(e) => {
+                          togglePin(item.sessionId, e);
+                          setActiveMenuId(null);
+                        }}
+                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-normal text-[#18181b] dark:text-zinc-200 cursor-pointer transition-colors duration-150 hover:bg-[#f4f4f5] dark:hover:bg-zinc-800"
+                      >
+                        {isPinned ? "고정 해제" : "고정"}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          handleDeleteSession(item.sessionId, e);
+                          setActiveMenuId(null);
+                        }}
+                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-normal text-[#ef4444] cursor-pointer transition-colors duration-150 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   )}
                 </div>
-
-                {/* 드롭다운 메뉴 (Dropbox) */}
-                {activeMenuId === item.id && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: "12px",
-                      top: "28px",
-                      backgroundColor: "#ffffff",
-                      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-                      borderRadius: "6px",
-                      padding: "4px",
-                      zIndex: 1010,
-                      width: "100px",
-                      border: "1px solid #e4e4e7",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "2px",
-                    }}
-                  >
-                    <button
-                      onClick={(e) => {
-                        togglePin(item.id, e);
-                        setActiveMenuId(null);
-                      }}
-                      style={dropdownItemStyle}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      {isPinned ? "고정 해제" : "고정"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert("이름 변경 창이 열립니다.");
-                        setActiveMenuId(null);
-                      }}
-                      style={dropdownItemStyle}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      이름 변경
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert("삭제되었습니다.");
-                        setActiveMenuId(null);
-                      }}
-                      style={{ ...dropdownItemStyle, color: "#ef4444" }}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#fee2e2")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </aside>
     </>

@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
+import { MarkdownRenderer } from "../common/MarkdownRenderer";
 
 interface Message {
   sender: "user" | "ai";
   text: string;
+  isStreaming?: boolean;
+  isStatus?: boolean;
+  candidates?: Array<{ corp_name: string; corp_code: string }>;
 }
 
 interface ChatAreaProps {
@@ -13,6 +17,7 @@ interface ChatAreaProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   companyName: string;
+  onSelectCandidate: (corpCode: string, corpName: string) => void;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -23,300 +28,191 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   isSidebarOpen,
   onToggleSidebar,
   companyName,
+  onSelectCandidate,
 }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState<boolean>(false);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    const isScrollUp = scrollHeight - scrollTop - clientHeight > 300;
+    setShowScrollBottom(isScrollUp);
+  };
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
-    <section
-      style={{
-        width: "100%",
-        backgroundColor: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        boxSizing: "border-box",
-        fontFamily: "'Inter', sans-serif",
-      }}
-    >
+    <section className="w-full bg-white dark:bg-[#121318] flex flex-col h-full box-border font-sans relative">
       {/* 챗 상단 간결한 토글 트리거 영역 */}
-      <div
-        style={{
-          height: "56px",
-          padding: "0 20px",
-          borderBottom: "1px solid #e2e8f0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          backgroundColor: "#ffffff",
-          boxSizing: "border-box",
-          flexShrink: 0,
-        }}
-      >
+      <div className="h-11 px-5 border-b border-solid border-[#e2e8f0] dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-[#121318] shrink-0 box-border">
         <button
           onClick={onToggleSidebar}
           title={isSidebarOpen ? "최근 대화 닫기" : "최근 대화 열기"}
-          style={{
-            border: "1px solid #e4e4e7",
-            borderRadius: "6px",
-            padding: "6px 8px",
-            cursor: "pointer",
-            backgroundColor: "#ffffff",
-            color: "#71717a",
-            transition: "all 0.15s ease",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "#f4f4f5";
-            e.currentTarget.style.color = "#18181b";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "#ffffff";
-            e.currentTarget.style.color = "#71717a";
-          }}
+          className="group rounded-3xl p-1.5 px-2 cursor-pointer bg-white dark:bg-[#121318] text-[#71717a] dark:text-zinc-400 transition-all duration-150 flex items-center justify-center h-8 w-8 hover:bg-[#f4f4f5] dark:hover:bg-zinc-800 hover:text-[#18181b] dark:hover:text-zinc-50"
         >
+          {/* 기본 사이드바 아이콘 */}
           <svg
-            width="15"
-            height="15"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className="block group-hover:hidden"
           >
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="9" y1="3" x2="9" y2="21"></line>
           </svg>
-        </button>
 
-        {/* 우측 3점 메뉴 */}
-        <div ref={menuRef} style={{ position: "relative", display: "inline-block" }}>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "18px",
-              color: "#71717a",
-              cursor: "pointer",
-              padding: "0 8px",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "28px",
-              transition: "background-color 0.15s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          {/* 호버 시 사이드바 접기 피드백 아이콘 */}
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="hidden group-hover:block"
           >
-            ⋮
-          </button>
-
-          {isMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "32px",
-                backgroundColor: "#ffffff",
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-                borderRadius: "8px",
-                padding: "6px",
-                zIndex: 100,
-                width: "140px",
-                border: "1px solid #e4e4e7",
-                display: "flex",
-                flexDirection: "column",
-                gap: "2px",
-              }}
-            >
-              {[
-                { label: "대화 공유", action: () => alert("대화가 공유되었습니다.") },
-                { label: "고정", action: () => alert(`${companyName} 대화가 고정되었습니다.`) },
-                { label: "이름 변경", action: () => alert("이름 변경 창이 열립니다.") },
-                { label: "노트북에 추가", action: () => alert("노트북에 추가되었습니다.") },
-                { label: "삭제", action: () => alert("삭제되었습니다."), color: "#ef4444" },
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    item.action();
-                    setIsMenuOpen(false);
-                  }}
-                  style={{
-                    padding: "8px 12px",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontWeight: "400",
-                    color: item.color || "#18181b",
-                    textAlign: "left",
-                    transition: "background-color 0.15s",
-                    width: "100%",
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+            <path d="M16 15l-3-3 3-3"></path>
+          </svg>
+        </button>
       </div>
 
       {/* 대화 피드 */}
       <div
-        className="custom-scrollbar"
-        style={{
-          flex: 1,
-          padding: "24px 20px",
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
-          backgroundColor: "#ffffff",
-        }}
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="custom-scrollbar flex-1 p-6 px-5 overflow-y-auto flex flex-col gap-6 bg-white dark:bg-[#121318]"
       >
         {messages.map((msg, index) => (
           <div
             key={index}
-            style={{
-              display: "flex",
-              justifyContent: msg.sender === "user" ? "flex-end" : "flex-start",
-              width: "100%",
-            }}
+            className={`flex w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
           >
             {msg.sender === "user" ? (
-              <div
-                style={{
-                  maxWidth: "85%",
-                  padding: "10px 16px",
-                  borderRadius: "12px",
-                  backgroundColor: "#f4f4f5",
-                  color: "#18181b",
-                  fontSize: "13px",
-                  lineHeight: "1.6",
-                }}
-              >
+              <div className="max-w-[85%] py-2.5 px-4 rounded-xl bg-[#f4f4f5] dark:bg-zinc-800 text-[#18181b] dark:text-[#f4f4f5] text-md leading-relaxed text-left">
                 {msg.text}
               </div>
             ) : (
-              <div style={{ display: "flex", gap: "12px", maxWidth: "90%" }}>
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    backgroundColor: "#18181b",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#ffffff",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    flexShrink: 0,
-                  }}
-                >
-                  AI
+              <div className="flex gap-3 max-w-[90%] flex-col">
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 rounded-3xl bg-[#777777] flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                    AI
+                  </div>
+                  <div className="text-[#18181b] dark:text-[#f4f4f5] text-md leading-relaxed pt-1 whitespace-pre-wrap text-left flex-1">
+                    <style>{`
+                      @keyframes wordWave {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-4px); }
+                      }
+                    `}</style>
+                    {msg.isStatus ? (
+                      <div className="inline-flex flex-wrap text-[#71717a] dark:text-zinc-400 font-medium">
+                        {msg.text.split("").map((char, index) => (
+                          <span
+                            key={index}
+                            style={{
+                              display: "inline-block",
+                              animation: "wordWave 1.4s infinite ease-in-out",
+                              animationDelay: `${index * 0.06}s`,
+                              whiteSpace: char === " " ? "pre" : "normal",
+                            }}
+                          >
+                            {char}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <MarkdownRenderer content={msg.text} />
+                    )}
+                  </div>
                 </div>
-                <div
-                  style={{
-                    color: "#18181b",
-                    fontSize: "13px",
-                    lineHeight: "1.6",
-                    paddingTop: "4px",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {msg.text}
-                </div>
+
+                {/* 기업 후보군 카드식 알약 버튼 렌더링 (이모지 완전 배제) */}
+                {msg.candidates && msg.candidates.length > 0 && (
+                  <div className="flex flex-wrap gap-2 ml-10 mt-1">
+                    {msg.candidates.map((cand, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() =>
+                          onSelectCandidate(cand.corp_code, cand.corp_name)
+                        }
+                        className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 border border-solid border-[#cbd5e1] dark:border-zinc-700 rounded-full py-1.5 px-3.5 text-sm text-[#4f46e5] dark:text-indigo-400 font-semibold cursor-pointer transition-all duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-[#f5f3ff] dark:hover:bg-zinc-700 hover:border-[#818cf8] dark:hover:border-zinc-500"
+                      >
+                        {cand.corp_name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
         ))}
+        <div ref={chatEndRef} />
       </div>
+
+      {/* 맨 밑으로 이동 플로팅 버튼 (이모티콘 제거, SVG 적용) */}
+      {showScrollBottom && (
+        <button
+          type="button"
+          onClick={scrollToBottom}
+          className="absolute bottom-20 right-3 bg-white dark:bg-zinc-800 text-[#18181b] dark:text-zinc-200 border border-solid border-[#cbd5e1] dark:border-zinc-700 rounded-full py-2 px-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer transition-all duration-150 hover:bg-slate-50 dark:hover:bg-zinc-700 hover:-translate-y-0.5 z-10"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+          </svg>
+        </button>
+      )}
 
       {/* 입력창 */}
       <form
         onSubmit={onSendMessage}
-        style={{
-          padding: "16px 20px",
-          backgroundColor: "#ffffff",
-          borderTop: "1px solid #f4f4f5",
-        }}
+        className="p-4 px-5 bg-white dark:bg-[#121318] border-t border-solid border-[#f4f4f5] dark:border-zinc-800"
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            backgroundColor: "#ffffff",
-            borderRadius: "6px",
-            padding: "8px 14px",
-            gap: "12px",
-            transition: "all 0.15s ease",
-            border: "1px solid #cbd5e1",
-          }}
-        >
+        <div className="flex items-center bg-white dark:bg-zinc-900 rounded-md px-3.5 gap-3 h-11 transition-colors duration-150 border border-solid border-[#cbd5e1] dark:border-zinc-800 focus-within:border-black dark:focus-within:border-zinc-500">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
-            placeholder="질문을 입력하세요..."
-            style={{
-              flex: 1,
-              border: "none",
-              backgroundColor: "transparent",
-              outline: "none",
-              fontSize: "13px",
-              color: "#18181b",
-              fontFamily: "'Inter', sans-serif",
-            }}
+            placeholder={
+              companyName === "새 문서"
+                ? "분석할 기업명을 입력하세요..."
+                : "추가 질문을 입력하세요..."
+            }
+            className="flex-1 border-none bg-transparent outline-none text-md text-[#18181b] dark:text-[#f4f4f5] font-sans"
           />
           <button
             type="submit"
             title="전송"
-            style={{
-              border: "none",
-              background: "none",
-              color: "#18181b",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "6px",
-              borderRadius: "4px",
-              backgroundColor: "#f4f4f5",
-              transition: "all 0.15s ease",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#e4e4e7")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#f4f4f5")}
+            className="border-none bg-transparent text-[#18181b] dark:text-[#f4f4f5] cursor-pointer flex items-center justify-center h-8 w-8 rounded-full bg-[#f4f4f5] dark:bg-zinc-800 transition-colors duration-150 hover:bg-[#e4e4e7] dark:hover:bg-zinc-700 shrink-0"
           >
             <svg
-              width="14"
-              height="14"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              color="#777777"
             >
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
