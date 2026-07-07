@@ -136,6 +136,21 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
 const FinancialsTab: React.FC<FinancialsTabProps> = ({
   analysisData,
 }) => {
+  const [isDark, setIsDark] = React.useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  React.useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
   if (!analysisData || !analysisData.financialInfo || !analysisData.basicInfo) {
     return <EmptyState />;
   }
@@ -148,20 +163,28 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
       {
         label: "매출액 (조원)",
         data: data.financialData.map((d) => d.revenue),
-        backgroundColor: "rgba(99, 102, 241, 0.85)",
-        hoverBackgroundColor: "rgba(99, 102, 241, 1)",
-        borderRadius: 6,
-        barPercentage: 0.85,
-        categoryPercentage: 0.85,
+        backgroundColor: isDark
+          ? "rgba(241, 245, 249, 0.85)" // Slate 100
+          : "rgba(30, 41, 59, 0.85)",   // Slate 800
+        hoverBackgroundColor: isDark
+          ? "rgba(255, 255, 255, 1)"
+          : "rgba(15, 23, 42, 1)",
+        borderRadius: 4,
+        barPercentage: 0.5,
+        categoryPercentage: 0.6,
       },
       {
         label: "영업이익 (조원)",
         data: data.financialData.map((d) => d.profit),
-        backgroundColor: "rgba(20, 184, 166, 0.85)",
-        hoverBackgroundColor: "rgba(20, 184, 166, 1)",
-        borderRadius: 6,
-        barPercentage: 0.85,
-        categoryPercentage: 0.85,
+        backgroundColor: isDark
+          ? "rgba(245, 158, 11, 0.85)"  // Amber 500
+          : "rgba(217, 119, 6, 0.85)",   // Amber 600
+        hoverBackgroundColor: isDark
+          ? "rgba(251, 191, 36, 1)"
+          : "rgba(180, 83, 9, 1)",
+        borderRadius: 4,
+        barPercentage: 0.5,
+        categoryPercentage: 0.6,
       },
     ],
   };
@@ -174,16 +197,33 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
         position: "top" as const,
         labels: {
           font: {
-            family: "sans-serif",
+            family: "'Nunito', 'Outfit', sans-serif",
             size: 11,
+            weight: "bold" as const,
           },
-          color: "#71717a",
+          color: isDark ? "#a1a1aa" : "#4b5563",
+          usePointStyle: true,
+          pointStyle: "circle" as const,
+          padding: 15,
         },
       },
       tooltip: {
-        bodyFont: {
-          family: "sans-serif",
+        backgroundColor: isDark ? "#181920" : "#ffffff",
+        titleColor: isDark ? "#f4f4f5" : "#18181b",
+        bodyColor: isDark ? "#a1a1aa" : "#4b5563",
+        borderColor: isDark ? "#27272a" : "#e2e8f0",
+        borderWidth: 1,
+        titleFont: {
+          family: "'Nunito', 'Outfit', sans-serif",
+          size: 12,
+          weight: "bold" as const,
         },
+        bodyFont: {
+          family: "'Nunito', 'Outfit', sans-serif",
+          size: 11,
+        },
+        padding: 10,
+        cornerRadius: 8,
       },
     },
     scales: {
@@ -192,21 +232,21 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
           display: false,
         },
         ticks: {
-          color: "#71717a",
+          color: isDark ? "#71717a" : "#94a3b8",
           font: {
-            family: "sans-serif",
+            family: "'Nunito', 'Outfit', sans-serif",
             size: 11,
           },
         },
       },
       y: {
         grid: {
-          color: "#f4f4f5",
+          color: isDark ? "rgba(63, 63, 70, 0.25)" : "rgba(226, 232, 240, 0.5)",
         },
         ticks: {
-          color: "#71717a",
+          color: isDark ? "#71717a" : "#94a3b8",
           font: {
-            family: "sans-serif",
+            family: "'Nunito', 'Outfit', sans-serif",
             size: 11,
           },
         },
