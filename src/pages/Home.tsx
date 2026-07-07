@@ -26,6 +26,7 @@ interface Message {
   isStreaming?: boolean;
   isStatus?: boolean;
   candidates?: Array<{ corp_name: string; corp_code: string }>;
+  isLoginError?: boolean;
 }
 
 const Home = (): React.JSX.Element => {
@@ -140,7 +141,7 @@ const Home = (): React.JSX.Element => {
               news: detail.company.news,
               aiAnalysis: detail.company.aiAnalysis,
               jobLinks: detail.company.jobLinks,
-              sessionId: detail.sessionId,
+              sessionId: detail.sessionId || storedSessionId,
             });
             setSelectedCompany(detail.company.basicInfo.companyName);
 
@@ -160,9 +161,13 @@ const Home = (): React.JSX.Element => {
                   ],
             );
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error("Mount session restoration failed:", err);
           sessionStorage.removeItem("currentSessionId");
+          if (err.response?.status === 401 || err.response?.status === 403) {
+            sessionStorage.removeItem("accessToken");
+            navigate("/login");
+          }
         }
       }
     };
@@ -205,7 +210,7 @@ const Home = (): React.JSX.Element => {
       ...prev,
       {
         sender: "ai",
-        text: `🔄 "${corpName}"의 실시간 데이터를 수집 및 분석하는 중입니다. 잠시만 기다려 주세요...`,
+        text: `"${corpName}"의 실시간 데이터를 수집 및 분석하는 중입니다. 잠시만 기다려 주세요...`,
         isStreaming: true,
       },
     ]);
@@ -233,7 +238,7 @@ const Home = (): React.JSX.Element => {
           ...listWithoutLoading,
           {
             sender: "ai",
-            text: `✨ "${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
+            text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
           },
         ];
       });
@@ -245,7 +250,7 @@ const Home = (): React.JSX.Element => {
           ...listWithoutLoading,
           {
             sender: "ai",
-            text: "⚠️ 기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+            text: "기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
           },
         ];
       });
@@ -340,6 +345,17 @@ const Home = (): React.JSX.Element => {
                     }
                     return prev;
                   });
+                } else if (eventType === "done") {
+                  setMessages((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.sender === "ai" && last.isStreaming) {
+                      return [
+                        ...prev.slice(0, -1),
+                        { ...last, isStreaming: false },
+                      ];
+                    }
+                    return prev;
+                  });
                 }
               } catch (e) {
                 setMessages((prev) => {
@@ -370,11 +386,18 @@ const Home = (): React.JSX.Element => {
           }
           return prev;
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        const status = err.response?.status;
         setMessages((prev) => [
           ...prev,
-          { sender: "ai", text: "⚠️ 대화 응답을 수신하는 데 실패했습니다." },
+          {
+            sender: "ai",
+            text: status === 401 || status === 403
+              ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
+              : "대화 응답을 수신하는 데 실패했습니다.",
+            isLoginError: status === 401 || status === 403,
+          },
         ]);
       }
       return;
@@ -388,10 +411,15 @@ const Home = (): React.JSX.Element => {
       ...prev,
       {
         sender: "ai",
-        text: "🔍 입력하신 기업의 후보 목록을 검색하는 중입니다...",
+        text: "입력하신 기업의 후보 목록을 검색하는 중입니다...",
         isStreaming: true,
       },
     ]);
+
+    const fallbackSearchMessage = {
+      sender: "ai" as const,
+      text: `"${userMsg}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다. 다른 기업을 다시 검색해 보세요.`,
+    };
 
     try {
       const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
@@ -418,16 +446,7 @@ const Home = (): React.JSX.Element => {
         } else {
           return [
             ...listWithoutLoading,
-            {
-              sender: "ai",
-              text: `🤔 "${userMsg}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다.\n\n공식 기업명(예: 삼성전자, 카카오) 또는 대표 종목코드(예: 005930)를 명확하게 입력해 주시기 바랍니다.\n\n아래의 주요 인기 기업 목록을 클릭하여 즉시 기업 정보 분석 및 실시간 리포트를 탐색해 보실 수도 있습니다:`,
-              candidates: [
-                { corp_name: "삼성전자", corp_code: "00126380" },
-                { corp_name: "SK하이닉스", corp_code: "00164779" },
-                { corp_name: "현대자동차", corp_code: "00164742" },
-                { corp_name: "카카오", corp_code: "00258865" },
-              ],
-            },
+            fallbackSearchMessage,
           ];
         }
       });
@@ -438,19 +457,21 @@ const Home = (): React.JSX.Element => {
         const status = err.response?.status;
         const detail = err.response?.data?.detail;
 
-        if (status === 400 || status === 404) {
+        if (status === 401 || status === 403) {
           return [
             ...listWithoutLoading,
             {
               sender: "ai",
-              text: `🤔 "${userMsg}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다.\n\n공식 기업명(예: 삼성전자, 카카오) 또는 대표 종목코드(예: 005930)를 명확하게 입력해 주시기 바랍니다.\n\n아래의 주요 인기 기업 목록을 클릭하여 즉시 기업 정보 분석 및 실시간 리포트를 탐색해 보실 수도 있습니다:`,
-              candidates: [
-                { corp_name: "삼성전자", corp_code: "00126380" },
-                { corp_name: "SK하이닉스", corp_code: "00164779" },
-                { corp_name: "현대자동차", corp_code: "00164742" },
-                { corp_name: "카카오", corp_code: "00258865" },
-              ],
+              text: "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다.",
+              isLoginError: true,
             },
+          ];
+        }
+
+        if (status === 400 || status === 404) {
+          return [
+            ...listWithoutLoading,
+            fallbackSearchMessage,
           ];
         }
 
@@ -458,7 +479,7 @@ const Home = (): React.JSX.Element => {
           ...listWithoutLoading,
           {
             sender: "ai",
-            text: `⚠️ 후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`,
+            text: `후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`,
           },
         ];
       });
@@ -500,7 +521,7 @@ const Home = (): React.JSX.Element => {
             news: detail.company.news,
             aiAnalysis: detail.company.aiAnalysis,
             jobLinks: detail.company.jobLinks,
-            sessionId: detail.sessionId,
+            sessionId: detail.sessionId || sessionId,
           });
 
           // 복원된 채팅 메시지 매핑 (role -> sender)
@@ -520,13 +541,17 @@ const Home = (): React.JSX.Element => {
                 ],
           );
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load session details:", err);
+        const status = err.response?.status;
         setMessages((prev) => [
           ...prev,
           {
             sender: "ai",
-            text: "⚠️ 대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
+            text: status === 401 || status === 403
+              ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
+              : "대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
+            isLoginError: status === 401 || status === 403,
           },
         ]);
       }

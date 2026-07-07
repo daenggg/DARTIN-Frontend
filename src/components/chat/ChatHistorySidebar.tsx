@@ -4,7 +4,9 @@ import axios from "axios";
 interface ChatSession {
   sessionId: string;
   companyName: string;
-  createdAt: string;
+  updatedAt: string;
+  isPinned: boolean;
+  pinnedAt?: string | null;
 }
 
 interface ChatHistorySidebarProps {
@@ -21,14 +23,12 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   activeSessionId,
 }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       fetchSessions();
-      fetchPinnedSessions();
     }
   }, [isOpen]);
 
@@ -39,26 +39,9 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       const res = await axios.get(`${BACKEND_URL}/api/chat/sessions`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-      if (Array.isArray(res.data)) {
-        setSessions(res.data);
-      }
-    } catch (err) {
-      console.error("실시간 세션 조회 실패:", err);
-    }
-  };
-
-  const fetchPinnedSessions = async () => {
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/chat/pins`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-      if (Array.isArray(res.data)) {
-        setPinnedIds(res.data);
-      }
-    } catch (err) {
-      console.error("고정 세션 조회 실패:", err);
+      setSessions(res.data.sessions || []);
+    } catch (err: any) {
+      console.error("fetchSessions failed:", err);
     }
   };
 
@@ -66,30 +49,52 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     e.stopPropagation();
     const token = sessionStorage.getItem("accessToken");
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-    const isPinned = pinnedIds.includes(sessionId);
+
+    const session = sessions.find((s) => s.sessionId === sessionId);
+    if (!session) return;
+
+    const isCurrentlyPinned = session.isPinned;
+    const endpoint = isCurrentlyPinned ? "unpin" : "pin";
+
+    // UI 낙관적 업데이트 수행 (Optimistic Update)
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.sessionId === sessionId
+          ? {
+              ...s,
+              isPinned: !isCurrentlyPinned,
+              pinnedAt: !isCurrentlyPinned ? new Date().toISOString() : null,
+            }
+          : s
+      )
+    );
 
     try {
-      if (isPinned) {
-        await axios.delete(`${BACKEND_URL}/api/chat/pins/${sessionId}`, {
+      await axios.patch(
+        `${BACKEND_URL}/api/chat/sessions/${sessionId}/${endpoint}`,
+        {},
+        {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
-        });
-        setPinnedIds((prev) => prev.filter((id) => id !== sessionId));
-      } else {
-        await axios.post(
-          `${BACKEND_URL}/api/chat/pins/${sessionId}`,
-          {},
-          {
-            headers: { Authorization: token ? `Bearer ${token}` : "" },
-          },
-        );
-        setPinnedIds((prev) => [...prev, sessionId]);
-      }
+        }
+      );
+      console.log(`[Debug Frontend] ${endpoint} success for session:`, sessionId);
     } catch (err) {
-      console.error("고정 토글 실패:", err);
+      console.error(`Failed to ${endpoint} session:`, err);
+      // 에러 발생 시 원래 상태로 복원
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.sessionId === sessionId
+            ? { ...s, isPinned: isCurrentlyPinned }
+            : s
+        )
+      );
     }
   };
 
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+  const handleDeleteSession = async (
+    sessionId: string,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     if (!window.confirm("이 대화 내역을 삭제하시겠습니까?")) return;
 
@@ -114,10 +119,17 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   };
 
   const sortedSessions = [...sessions].sort((a, b) => {
-    const aPinned = pinnedIds.includes(a.sessionId) ? 1 : 0;
-    const bPinned = pinnedIds.includes(b.sessionId) ? 1 : 0;
+    const aPinned = a.isPinned ? 1 : 0;
+    const bPinned = b.isPinned ? 1 : 0;
     if (aPinned !== bPinned) return bPinned - aPinned;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+    // 만약 둘 다 핀 고정된 상태라면, 고정된 시간(pinnedAt) 기준 최신순 정렬
+    if (a.isPinned && b.isPinned && a.pinnedAt && b.pinnedAt) {
+      return new Date(b.pinnedAt).getTime() - new Date(a.pinnedAt).getTime();
+    }
+
+    // 그 외에는 마지막 수정 시간(updatedAt) 기준 최신순 정렬
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
 
   return (
@@ -140,8 +152,11 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       >
         {/* 헤더 및 닫기 버튼 */}
         <div className="p-5 px-6 flex justify-between items-center whitespace-nowrap">
-          <span className="font-bold text-lg text-[#1f1f1f] dark:text-[#f4f4f5]">
-            최근 분석 목록
+          <span 
+            className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 select-none"
+            style={{ fontFamily: '"Nunito", sans-serif' }}
+          >
+            DARTIN
           </span>
         </div>
 
@@ -169,7 +184,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             </div>
           ) : (
             sortedSessions.map((item) => {
-              const isPinned = pinnedIds.includes(item.sessionId);
+              const isPinned = item.isPinned;
               const isActive = activeSessionId === item.sessionId;
               const isHovered = hoveredId === item.sessionId;
 
