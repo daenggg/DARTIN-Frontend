@@ -40,13 +40,13 @@ const Login = (): React.JSX.Element => {
       isSent = true;
       setIsExchanging(true);
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-      
+
       const sendCodeToBackend = async (kakaoCode: string) => {
         try {
           const response = await axios.post(
             `${BACKEND_URL}/api/auth/login`,
             { code: kakaoCode },
-            { withCredentials: true }
+            { withCredentials: true },
           );
           if (response.status === 200) {
             const { accessToken, user } = response.data;
@@ -63,13 +63,16 @@ const Login = (): React.JSX.Element => {
           isSent = false;
         }
       };
-      
+
       sendCodeToBackend(code);
     }
   }, [navigate]);
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-[#f8f7f4] dark:bg-[#121318] font-sans text-zinc-900 dark:text-zinc-100 overflow-hidden box-border flex flex-col justify-between pt-2 pb-6 px-6 transition-colors duration-200">
+    <div 
+      className="fixed inset-0 w-screen h-screen font-sans overflow-hidden box-border flex flex-col justify-between pt-2 px-6 transition-colors duration-200"
+      style={{ background: "var(--bg)", color: "var(--text)" }}
+    >
       {/* 커스텀 키프레임 애니메이션 선언 */}
       <style>{`
         @keyframes riseUp {
@@ -82,164 +85,210 @@ const Login = (): React.JSX.Element => {
             opacity: 0.95;
           }
         }
-        @keyframes swayLeft {
-          0% { transform: translate(-50%, 0) translateX(0); }
-          100% { transform: translate(-50%, 0) translateX(-35px); }
-        }
-        @keyframes swayRight {
-          0% { transform: translate(-50%, 0) translateX(0); }
-          100% { transform: translate(-50%, 0) translateX(35px); }
-        }
       `}</style>
 
-      {/* 1. 백그라운드 태양/달 (구름 사이에서 떠오르는 애니메이션 적용 - 다크모드 대응: 은은하게 빛나는 노란 보름달) */}
+      {/* 1. 백그라운드 태양/달 */}
       <div
-        className="absolute bottom-[-160px] md:bottom-[-200px] left-1/2 w-[480px] md:w-[650px] h-[480px] md:h-[650px] rounded-full bg-gradient-to-b from-rose-200 via-pink-100 to-amber-100/40 dark:from-yellow-100/80 dark:via-amber-300/30 dark:to-transparent blur-xs z-0 pointer-events-none transition-all duration-200"
+        className="absolute bottom-[-240px] md:bottom-[-350px] left-1/2 w-[640px] md:w-[900px] h-[640px] md:h-[900px] rounded-full bg-gradient-to-b from-rose-200 via-pink-100 to-amber-100/40 dark:from-yellow-100/80 dark:via-amber-300/30 dark:to-transparent blur-xs z-0 pointer-events-none transition-all duration-200"
         style={{
           animation: "riseUp 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         }}
       />
 
-      {/* 2. 백그라운드 구름 레이어 (좌우 유영 모션 적용 - 라이트/다크 모두 은은한 화이트 안개구름으로 통일) */}
-      {/* 레이어 A (가장 깊은 곳 - 반투명 화이트 구름) */}
-      <div
-        className="absolute bottom-[-80px] left-1/2 w-[110%] h-[200px] pointer-events-none z-10 opacity-50"
-        style={{
-          animation: "swayLeft 18s ease-in-out infinite alternate",
-        }}
-      >
-        <div className="absolute left-[15%] w-72 h-72 rounded-full bg-white/40 dark:bg-zinc-950/40 blur-3xl transition-colors duration-200" />
-        <div className="absolute left-[45%] w-80 h-80 rounded-full bg-white/50 dark:bg-zinc-950/50 blur-3xl transition-colors duration-200" />
-        <div className="absolute left-[70%] w-72 h-72 rounded-full bg-white/45 dark:bg-zinc-950/45 blur-3xl transition-colors duration-200" />
-      </div>
-
-      {/* 레이어 B (중간 레이어 - 부드러운 화이트 구름) */}
-      <div
-        className="absolute bottom-[-60px] left-1/2 w-[110%] h-[180px] pointer-events-none z-20 opacity-75"
-        style={{
-          animation: "swayRight 22s ease-in-out infinite alternate",
-        }}
-      >
-        <div className="absolute left-[5%] w-80 h-80 rounded-full bg-white/60 dark:bg-zinc-900/40 blur-2xl transition-colors duration-200" />
-        <div className="absolute left-[35%] w-96 h-96 rounded-full bg-white/70 dark:bg-zinc-900/50 blur-2xl transition-colors duration-200" />
-        <div className="absolute left-[65%] w-80 h-80 rounded-full bg-white/60 dark:bg-zinc-900/40 blur-2xl transition-colors duration-200" />
-      </div>
-
-      {/* 레이어 C (가장 전면 - 두꺼운 화이트 구름 베이스) */}
-      <div
-        className="absolute bottom-[-40px] left-1/2 w-[110%] h-[140px] pointer-events-none z-30 opacity-95"
-        style={{
-          animation: "swayLeft 14s ease-in-out infinite alternate",
-        }}
-      >
-        <div className="absolute left-[10%] w-72 h-72 rounded-full bg-white/80 dark:bg-zinc-800/50 blur-xl transition-colors duration-200" />
-        <div className="absolute left-[40%] w-80 h-80 rounded-full bg-white/90 dark:bg-zinc-800/60 blur-xl transition-colors duration-200" />
-        <div className="absolute left-[70%] w-72 h-72 rounded-full bg-white/85 dark:bg-zinc-800/55 blur-xl transition-colors duration-200" />
-      </div>
-
       {/* 상단 네비게이션 헤더 바 */}
-      <header className="w-full max-w-6xl mx-auto flex items-center justify-between py-3 px-4 md:px-8 z-40 select-none box-border">
+      <header className="w-full max-w-6xl mx-auto flex items-center justify-between py-4 px-4 md:px-8 z-40 select-none box-border">
         {/* 로고 */}
-        <span 
-          className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white"
-          style={{ color: theme === "dark" ? "#e4e4e7" : "#18181b", fontFamily: '"Nunito", sans-serif' }}
+        <span
+          className="text-2xl font-black tracking-tight flex items-center gap-1.5"
+          style={{
+            color: "var(--text-h)",
+            fontFamily: '"Nunito", sans-serif',
+          }}
         >
+          <span className="w-2.5 h-2.5 rounded-full bg-[#D4543D]" />
           DARTIN
         </span>
 
-        {/* 테마 토글 버튼 */}
-        <button
-          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-          className="border border-solid border-zinc-200 dark:border-zinc-800 bg-transparent p-1.5 rounded-lg cursor-pointer text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors duration-200"
-          title={theme === "light" ? "다크모드 켜기" : "라이트모드 켜기"}
+        {/* 중앙 서브 네비게이션 링크 */}
+        <nav 
+          className="hidden md:flex items-center gap-8 text-xs font-semibold"
+          style={{ color: "var(--text)" }}
         >
-          {theme === "light" ? (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          ) : (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-          )}
-        </button>
+          <span className="cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">
+            이용 방법
+          </span>
+          <span className="cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">
+            핵심 기능
+          </span>
+          <span className="cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">
+            보안
+          </span>
+        </nav>
+
+        {/* 우측 테마 버튼 그룹 */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            className="border border-solid border-zinc-200 dark:border-zinc-850 bg-transparent p-1.5 rounded-lg cursor-pointer text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors duration-200"
+            title={theme === "light" ? "다크모드 켜기" : "라이트모드 켜기"}
+          >
+            {theme === "light" ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
+          </button>
+        </div>
       </header>
 
-      {/* 메인 히어로 컨텐츠 */}
-      <main className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center flex-1 text-center z-40 px-4 box-border">
-        {/* 메인 타이틀 (다크모드 시 백색 폰트 및 광채 효과 추가) */}
-        <h1
-          className="text-4xl md:text-[54px] font-black tracking-tight dark:drop-shadow-[0_0_30px_rgba(255,255,255,0.22)] leading-[1.12] m-0 select-none transition-colors duration-200"
-          style={{ color: theme === "dark" ? "#e4e4e7" : "#18181b" }}
-        >
-          기업 공시의 핵심 가치,
-          <br />
-          인공지능으로 떠오르다
-        </h1>
+      {/* 메인 히어로 컨텐츠 (프리미엄 2열 스플릿 레이아웃) */}
+      <main className="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center z-40 px-4 md:px-8 box-border mt-4 mb-6 overflow-y-auto lg:overflow-visible">
+        {/* 좌측 컬럼 */}
+        <div className="lg:col-span-7 flex flex-col text-left items-start select-none">
+          <div className="border border-solid border-[#D4543D]/30 text-[#D4543D] text-[10px] md:text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider select-none bg-[#D4543D]/5 inline-block">
+            AI 기업 진단 서비스
+          </div>
 
-        {/* 서브 카피 */}
-        <p
-          className="text-xs md:text-sm mt-6 max-w-xl leading-relaxed select-none transition-colors duration-200"
-          style={{ color: theme === "dark" ? "#d4d4d8" : "#71717a" }}
-        >
-          흩어져 있던 DART 공시 데이터와 주요 미디어 기사들을 정밀하게 연결하여,
-          <br />
-          DARTIN AI 모델이 명쾌한 실시간 비즈니스 리포트를 전달합니다.
-        </p>
-
-        {/* 액션 버튼 */}
-        <div className="mt-9">
-          {/* 카카오 로그인 */}
-          <button
-            onClick={handleKakaoLogin}
-            className="flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#FADA0A] text-[#191919] font-bold py-3.5 px-8 rounded-full text-xs cursor-pointer transition-all duration-150 shadow-md hover:scale-102 select-none border-none shrink-0"
+          <h1
+            className="text-4xl md:text-[52px] lg:text-[56px] font-black tracking-tight leading-[1.15] m-0 transition-colors duration-200 text-left select-none mt-3 md:mt-4"
+            style={{ color: "var(--text-h)", fontFamily: '"Outfit", "Nunito", sans-serif' }}
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="shrink-0"
+            이 회사,{" "}
+            <span className="relative inline-block pb-0.5 border-b-[4px] border-solid border-[#D4543D]/80">
+              들어가도 될까?
+            </span>
+            <br />
+            공시·뉴스·공고를 <span className="text-[#D4543D]">한 번에</span> 묻다.
+          </h1>
+
+          <p 
+            className="text-xs md:text-sm leading-relaxed max-w-lg m-0 text-left font-normal select-none mt-3 md:mt-4"
+            style={{ color: "var(--text)" }}
+          >
+            사람인, 잡코리아, DART, 네이버 뉴스를 따로 뒤지지 마세요. 회사 이름
+            하나만 검색하면{" "}
+            <strong className="font-semibold" style={{ color: "var(--text-h)" }}>
+              재무 상태, 최근 이슈, 채용 공고
+            </strong>
+            를 모아 AI가 취준생의 언어로 명쾌하게 대답합니다.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-4 mt-5 md:mt-6">
+            <button
+              onClick={handleKakaoLogin}
+              className="flex items-center justify-center gap-2.5 bg-[#FEE500] hover:bg-[#FADA0A] text-[#191919] font-extrabold py-3.5 px-7 rounded-full text-xs md:text-sm cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 select-none border-none shrink-0"
             >
-              <path d="M12 3c-5.523 0-10 3.753-10 8.383 0 2.964 1.83 5.56 4.606 7.15l-1.077 3.978c-.113.418.36.786.725.545l4.67-3.088c.35.048.707.073 1.076.073 5.523 0 10-3.753 10-8.383 0-4.63-4.477-8.383-10-8.383z" />
-            </svg>
-            카카오 로그인으로 시작하기 &rarr;
-          </button>
+              💬 카카오로 3초 만에 시작하기 &rarr;
+            </button>
+          </div>
+        </div>
+
+        {/* 우측 컬럼: 문서 카드 모형 */}
+        <div className="lg:col-span-5 w-full flex items-center justify-center relative mt-4 lg:mt-0">
+          <div className="w-full max-w-[360px] md:max-w-[400px] bg-[#f4f2ea] border border-solid border-[#d7d4c8] rounded-xl p-6 shadow-2xl relative rotate-[-1deg] hover:rotate-0 transition-transform duration-350 text-left box-border font-serif text-[#2c2b2a]">
+            <div className="border-b border-solid border-[#d7d4c8] pb-4 select-none relative">
+              <span className="text-[10px] uppercase tracking-widest text-[#7c786a] block mb-1">
+                Company Dossier · No. 2026-0417
+              </span>
+              <h3 className="text-xl md:text-2xl font-black text-[#1c1b1a] m-0 tracking-tight">
+                (주)테크노바
+              </h3>
+              <div className="absolute right-0 top-0 border-[2px] border-dashed border-[#D4543D] text-[#D4543D] text-[10px] md:text-xs font-black rounded-full w-14 h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rotate-[-15deg] select-none opacity-85">
+                <span className="text-[9px] uppercase leading-none font-sans">
+                  DARTIN
+                </span>
+                <span className="font-bold leading-tight font-sans">
+                  AI 진단
+                </span>
+                <span className="text-[9px] leading-none font-sans">완료</span>
+              </div>
+            </div>
+
+            <div className="pt-5 flex flex-col gap-4 text-xs md:text-sm">
+              <div className="flex justify-between items-center pb-2 border-b border-dotted border-[#d7d4c8]">
+                <span className="text-[#6c685b]">최근 매출 성장률</span>
+                <span className="font-bold text-emerald-700 font-mono">
+                  +18.4%
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-dotted border-[#d7d4c8]">
+                <span className="text-[#6c685b]">영업이익률</span>
+                <span className="font-bold text-emerald-700 font-mono">
+                  12.1%
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-dotted border-[#d7d4c8]">
+                <span className="text-[#6c685b]">부채비율</span>
+                <span className="font-bold text-[#D4543D] font-mono">
+                  주의 · 138%
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="bg-[#e9e6dc] text-[#5c584d] text-[10px] px-2 py-0.5 rounded border border-solid border-[#d7d4c8] font-sans">
+                  #신사업 확장
+                </span>
+                <span className="bg-[#e9e6dc] text-[#5c584d] text-[10px] px-2 py-0.5 rounded border border-solid border-[#d7d4c8] font-sans">
+                  #인원 채용 확대
+                </span>
+                <span className="bg-[#e9e6dc] text-[#5c584d] text-[10px] px-2 py-0.5 rounded border border-solid border-[#d7d4c8] font-sans">
+                  #해외 진출
+                </span>
+              </div>
+
+              <div className="mt-2 text-xs leading-relaxed text-[#4c483d] bg-[#eae7de]/60 p-3.5 rounded-lg border border-solid border-[#e0ddcf] font-sans">
+                <strong className="text-[#1c1b1a] block mb-1">
+                  💡 AI 요약
+                </strong>
+                "매출은 꾸준히 늘고 있지만 부채비율이 다소 높은 편. 최근 2건
+                게재, 신규 사업팀 확대 중."
+              </div>
+            </div>
+
+            <div className="absolute bottom-[-24px] -left-8 md:-left-12 max-w-[220px] bg-zinc-900/95 dark:bg-zinc-950/95 text-white p-3 rounded-lg border border-solid border-zinc-800 shadow-xl text-[10px] md:text-xs z-50 text-left font-sans flex flex-col gap-1 transition-all duration-300 hover:scale-105 select-none leading-relaxed">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-semibold text-[9px] uppercase tracking-wider">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                NAVER NEWS · 3일 전
+              </div>
+              <div className="text-zinc-100 font-medium">
+                "테크노바, 2공장 증설 위해 500억 투자 결정"
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
-      <footer
-        className="w-full max-w-6xl mx-auto py-5 px-4 md:px-8 text-center text-[9px] z-40 select-none uppercase tracking-[0.2em] box-border border-t border-solid border-zinc-200/50 dark:border-zinc-900/50 transition-colors duration-200"
-        style={{ color: theme === "dark" ? "#71717a" : "#a1a1aa" }}
-      >
-        Trusted by Enterprises and Investors Nationwide • DARTIN © 2026
-      </footer>
+
 
       {/* 카카오 토큰 교환 중 로딩 팝업 */}
       {isExchanging && (

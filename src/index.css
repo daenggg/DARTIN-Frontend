@@ -27,19 +27,6 @@
   --color-brand-accent-border: rgba(170, 59, 255, 0.5);
 }
 
-.dark {
-  /* 다크모드 시 눈부신 순백색(#ffffff) 텍스트를 방지하기 위해 소프트 실버/오프화이트 톤으로 오버라이드 */
-  --color-white: #e4e4e7;
-  --color-zinc-50: #e4e4e7;
-  --color-zinc-100: #d4d4d8;
-  --color-zinc-200: #a1a1aa;
-
-  /* 다크모드 시 경계선이 선명하고 뚜렷하게 도드라져 보이도록 고대비 컬러 매핑 */
-  --color-zinc-800: #4b5563; /* 기존 zinc-600 수준으로 선명도 강화 */
-  --color-zinc-700: #6b7280; /* 기존 zinc-500 수준으로 선명도 강화 */
-  --border: #4b5563;
-}
-
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -53,8 +40,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   /* Font Sizing Variables */
@@ -103,6 +90,24 @@
   #social .button-icon {
     filter: invert(1) brightness(2);
   }
+}
+
+.dark {
+  /* 다크모드 시 눈부신 순백색(#ffffff) 텍스트를 방지하기 위해 소프트 실버/오프화이트 톤으로 오버라이드 */
+  --color-white: #e4e4e7;
+  --color-zinc-50: #e4e4e7;
+  --color-zinc-100: #d4d4d8;
+  --color-zinc-200: #a1a1aa;
+
+  /* 다크모드 시 경계선이 선명하고 뚜렷하게 도드라져 보이도록 고대비 컬러 매핑 */
+  --color-zinc-800: #4b5563; /* 기존 zinc-600 수준으로 선명도 강화 */
+  --color-zinc-700: #6b7280; /* 기존 zinc-500 수준으로 선명도 강화 */
+
+  /* 전역 테마 변수 오버라이드로 가장자리 빈 공간 색상 불일치 해결 */
+  --bg: #131929;
+  --text: #e4e4e7;
+  --text-h: #ffffff;
+  --border: #4b5563;
 }
 
 #root {
@@ -197,5 +202,3 @@ code {
 .dark .custom-scrollbar {
   scrollbar-color: #3f3f46 transparent;
 }
-
-
