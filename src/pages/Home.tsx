@@ -257,6 +257,101 @@ const Home = (): React.JSX.Element => {
     }
   };
 
+  // 1단계: 최초 기업명 검색 API 호출 공통 헬퍼 함수
+  const executeCompanySearch = async (searchQuery: string) => {
+    const token = sessionStorage.getItem("accessToken");
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: "입력하신 기업의 후보 목록을 검색하는 중입니다...",
+        isStreaming: true,
+      },
+    ]);
+
+    const fallbackSearchMessage = {
+      sender: "ai" as const,
+      text: `"${searchQuery}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다. 다른 기업을 다시 검색해 보세요.`,
+    };
+
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
+        params: { search_query: searchQuery },
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+
+      const candidates = res.data?.companies;
+      const isSingleMatch = res.data?.isSingleMatch;
+
+      setMessages((prev) => {
+        const listWithoutLoading = prev.slice(0, -1);
+
+        // [isSingleMatch: true 분기] 단일 매칭 기업이고 후보군이 존재하면 대화창 선택지 렌더링을 패스하고 바로 대시보드 진입!
+        if (isSingleMatch && Array.isArray(candidates) && candidates.length > 0) {
+          const singleCompany = candidates[0];
+          setTimeout(() => {
+            handleSelectCandidate(singleCompany.corpCode, singleCompany.corpName);
+          }, 0);
+          return listWithoutLoading; // 분석 중 안내창이 뜰 것이므로 리스트 문구 추가 안 함
+        }
+
+        if (Array.isArray(candidates) && candidates.length > 0) {
+          return [
+            ...listWithoutLoading,
+            {
+              sender: "ai",
+              text: `"${searchQuery}"에 대한 후보 기업 검색 결과입니다. 분석을 원하는 기업을 선택해 주세요:`,
+              candidates: candidates.map((c: any) => ({
+                corp_name: c.corpName,
+                corp_code: c.corpCode,
+              })),
+            },
+          ];
+        } else {
+          return [
+            ...listWithoutLoading,
+            fallbackSearchMessage,
+          ];
+        }
+      });
+    } catch (err: any) {
+      console.error(err);
+      setMessages((prev) => {
+        const listWithoutLoading = prev.slice(0, -1);
+        const status = err.response?.status;
+        const detail = err.response?.data?.detail;
+
+        if (status === 401 || status === 403) {
+          return [
+            ...listWithoutLoading,
+            {
+              sender: "ai",
+              text: "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다.",
+              isLoginError: true,
+            },
+          ];
+        }
+
+        if (status === 400 || status === 404) {
+          return [
+            ...listWithoutLoading,
+            fallbackSearchMessage,
+          ];
+        }
+
+        return [
+          ...listWithoutLoading,
+          {
+            sender: "ai",
+            text: `후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`,
+          },
+        ];
+      });
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
@@ -265,7 +360,7 @@ const Home = (): React.JSX.Element => {
     setMessages((prev) => [...prev, { sender: "user", text: userMsg }]);
     setInputValue("");
 
-    // 1. 이미 세션이 열린 상태에서의 후속 질문 (스트리밍)
+    // 1. 이미 세션이 열린 상태에서의 후속 질문 (스트리밍 또는 재검색 판단)
     if (analysisData?.sessionId) {
       const token = sessionStorage.getItem("accessToken");
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
@@ -283,6 +378,22 @@ const Home = (): React.JSX.Element => {
         });
 
         if (!response.ok) throw new Error("Failed to send message");
+
+        // 백엔드가 스트림이 아닌 재검색용 일반 JSON을 응답했는지 응답 헤더 확인
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const json = await response.json();
+          // [예외 케이스 처리] 단일 매칭(isSingleMatch: true)으로 기업명이 응답된 경우
+          if (json.isSingleMatch && Array.isArray(json.companyList) && json.companyList.length > 0) {
+            const matchedCompany = json.companyList[0];
+            // 1단계 최초 기업명 검색 GET API 자동 재호출
+            setTimeout(() => {
+              executeCompanySearch(matchedCompany);
+            }, 0);
+            return;
+          }
+        }
+
         if (!response.body) throw new Error("No response body");
 
         const reader = response.body.getReader();
@@ -404,86 +515,7 @@ const Home = (): React.JSX.Element => {
     }
 
     // 2. 세션이 없는 경우 최초 기업명 추출 후보 검색
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: "입력하신 기업의 후보 목록을 검색하는 중입니다...",
-        isStreaming: true,
-      },
-    ]);
-
-    const fallbackSearchMessage = {
-      sender: "ai" as const,
-      text: `"${userMsg}"에 해당되는 국내 상장 기업 후보를 찾지 못했습니다. 다른 기업을 다시 검색해 보세요.`,
-    };
-
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
-        params: { search_query: userMsg },
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-
-      const candidates = res.data?.companies;
-
-      setMessages((prev) => {
-        const listWithoutLoading = prev.slice(0, -1);
-        if (Array.isArray(candidates) && candidates.length > 0) {
-          return [
-            ...listWithoutLoading,
-            {
-              sender: "ai",
-              text: `"${userMsg}"에 대한 후보 기업 검색 결과입니다. 분석을 원하는 기업을 선택해 주세요:`,
-              candidates: candidates.map((c: any) => ({
-                corp_name: c.corpName,
-                corp_code: c.corpCode,
-              })),
-            },
-          ];
-        } else {
-          return [
-            ...listWithoutLoading,
-            fallbackSearchMessage,
-          ];
-        }
-      });
-    } catch (err: any) {
-      console.error(err);
-      setMessages((prev) => {
-        const listWithoutLoading = prev.slice(0, -1);
-        const status = err.response?.status;
-        const detail = err.response?.data?.detail;
-
-        if (status === 401 || status === 403) {
-          return [
-            ...listWithoutLoading,
-            {
-              sender: "ai",
-              text: "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다.",
-              isLoginError: true,
-            },
-          ];
-        }
-
-        if (status === 400 || status === 404) {
-          return [
-            ...listWithoutLoading,
-            fallbackSearchMessage,
-          ];
-        }
-
-        return [
-          ...listWithoutLoading,
-          {
-            sender: "ai",
-            text: `후보 기업 검색 도중 에러가 발생했습니다: ${detail || "네트워크 통신 오류가 발생했습니다."}`,
-          },
-        ];
-      });
-    }
+    executeCompanySearch(userMsg);
   };
 
   const handleSelectHistory = async (
