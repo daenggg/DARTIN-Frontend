@@ -24,8 +24,9 @@ const Header: React.FC<HeaderProps> = ({ userName, onLogout }) => {
         {/* Gemini 스타일의 그라데이션 타이틀 */}
         <span
           style={{
-            fontSize: "22px",
-            fontWeight: "700",
+            fontSize: "33px",
+            fontWeight: "800",
+            fontFamily: '"Nunito", sans-serif',
             background:
               "linear-gradient(135deg, #4285f4 0%, #9b72cb 40%, #d96570 100%)",
             WebkitBackgroundClip: "text",
@@ -33,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ userName, onLogout }) => {
             letterSpacing: "-0.5px",
           }}
         >
-          Go-West
+          DARTIN
         </span>
         <span
           style={{
