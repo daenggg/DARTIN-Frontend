@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import ConfirmModal from "../common/ConfirmModal";
 
 interface ChatSession {
   sessionId: string;
@@ -7,6 +8,7 @@ interface ChatSession {
   updatedAt: string;
   isPinned: boolean;
   pinnedAt?: string | null;
+  isDeleting?: boolean;
 }
 
 interface ChatHistorySidebarProps {
@@ -25,10 +27,14 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       fetchSessions();
+    } else {
+      setActiveMenuId(null);
     }
   }, [isOpen]);
 
@@ -91,26 +97,52 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     }
   };
 
-  const handleDeleteSession = async (
+  const handleDeleteSession = (
     sessionId: string,
     e: React.MouseEvent,
   ) => {
     e.stopPropagation();
-    if (!window.confirm("이 대화 내역을 삭제하시겠습니까?")) return;
+    setDeletingSessionId(sessionId);
+    setIsDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deletingSessionId) return;
     const token = sessionStorage.getItem("accessToken");
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.sessionId === deletingSessionId ? { ...s, isDeleting: true } : s
+      )
+    );
+    setIsDeleteModalOpen(false);
+
     try {
-      await axios.delete(`${BACKEND_URL}/api/chat/sessions/${sessionId}`, {
+      await axios.delete(`${BACKEND_URL}/api/chat/sessions/${deletingSessionId}`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
-      if (activeSessionId === sessionId) {
-        onSelectHistory("New", "새 문서");
-      }
+      setTimeout(() => {
+        setSessions((prev) => prev.filter((s) => s.sessionId !== deletingSessionId));
+        if (activeSessionId === deletingSessionId) {
+          onSelectHistory("New", "새 문서");
+        }
+        setDeletingSessionId(null);
+      }, 300);
     } catch (err) {
       console.error("세션 삭제 실패:", err);
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.sessionId === deletingSessionId ? { ...s, isDeleting: false } : s
+        )
+      );
+      setDeletingSessionId(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingSessionId(null);
   };
 
   const handleItemClick = (sessionId: string, companyName: string) => {
@@ -145,41 +177,50 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         style={{
           width: "260px",
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
-          borderRight: isOpen ? "1px solid #cbd5e1" : "none",
+          borderRight: isOpen ? "1px solid var(--border)" : "none",
           boxShadow: isOpen ? "4px 0 24px rgba(0, 0, 0, 0.08)" : "none",
+          background: "var(--bg)"
         }}
-        className="fixed top-0 left-0 h-screen bg-white dark:bg-[#121318] dark:border-r dark:border-zinc-800 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col z-[1000] box-border font-sans overflow-hidden"
+        className="fixed top-0 left-0 h-screen transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col z-[1000] box-border font-sans overflow-hidden"
       >
         {/* 헤더 및 닫기 버튼 */}
-        <div className="p-5 px-6 flex justify-between items-center whitespace-nowrap">
+        <div className="p-3.5 px-4 flex justify-between items-center whitespace-nowrap">
           <span 
-            className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 select-none"
-            style={{ fontFamily: '"Nunito", sans-serif' }}
+            className="text-lg font-black tracking-tight select-none"
+            style={{ color: "var(--text-h)", fontFamily: '"Nunito", sans-serif' }}
           >
             DARTIN
           </span>
         </div>
 
         {/* 새 대화 버튼 */}
-        <div className="p-4 pt-0 whitespace-nowrap">
+        <div className="p-3 pt-0 whitespace-nowrap">
           <button
             onClick={() => {
               onSelectHistory("New", "새 문서");
               onClose();
             }}
-            className="flex items-center justify-center gap-1 w-full bg-[#f0f4f9] dark:bg-zinc-800 border border-solid border-[#cbd5e1] dark:border-zinc-700 rounded-full text-[#1f1f1f] dark:text-zinc-100 text-md cursor-pointer transition-all duration-200 hover:bg-[#e3e3e3] dark:hover:bg-zinc-700"
+            className="flex items-center justify-center gap-1 w-full border border-solid rounded-full text-xs py-1.5 cursor-pointer transition-all duration-200 font-bold"
+            style={{
+              background: "var(--bg-panel)",
+              borderColor: "var(--border)",
+              color: "var(--text-h)"
+            }}
           >
             <span>+ 새 채팅</span>
           </button>
         </div>
 
         {/* 구분선 */}
-        <div className="mx-4 mb-3 border-t border-solid border-[#e4e4e7] dark:border-zinc-800" />
+        <div 
+          className="mx-3 mb-2.5 border-t border-solid" 
+          style={{ borderTopColor: "var(--border)" }}
+        />
 
         {/* 히스토리 목록 */}
-        <div className="custom-scrollbar flex-1 overflow-y-auto px-3 flex flex-col">
+        <div className="custom-scrollbar flex-1 overflow-y-auto px-2 flex flex-col">
           {sortedSessions.length === 0 ? (
-            <div className="text-xs text-[#a1a1aa] py-6 text-center">
+            <div className="text-xs py-4 text-center" style={{ color: "var(--text)" }}>
               분석 이력이 존재하지 않습니다.
             </div>
           ) : (
@@ -196,11 +237,19 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   }
                   onMouseEnter={() => setHoveredId(item.sessionId)}
                   onMouseLeave={() => setHoveredId(null)}
-                  className={`pl-3 mb-1.5 h-6 rounded-md cursor-pointer transition-all duration-150 flex items-center justify-between gap-1.5 relative border-l-[3px] border-solid box-border text-sm ${
-                    isActive
-                      ? "bg-[#f4f4f5] dark:bg-zinc-800 border-l-[#18181b] dark:border-l-zinc-100 text-[#18181b] dark:text-[#f4f4f5] font-semibold"
-                      : "border-l-transparent text-[#71717a] dark:text-zinc-400 font-normal hover:bg-[#fafafa] dark:hover:bg-zinc-900/50 hover:text-[#18181b] dark:hover:text-zinc-50 hover:border-l-[#e4e4e7] dark:hover:border-l-zinc-700"
-                  }`}
+                  className="pl-3 mb-1.5 h-8 rounded-md cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex items-center justify-between gap-1.5 relative border-l-[3px] border-solid box-border text-sm"
+                  style={{
+                    backgroundColor: isActive ? "var(--bg-hover)" : isHovered ? "var(--bg-hover)" : "transparent",
+                    borderLeftColor: isActive ? "var(--text-h)" : isHovered ? "var(--border)" : "transparent",
+                    color: isActive ? "var(--text-h)" : "var(--text)",
+                    fontWeight: isActive ? "600" : "400",
+                    opacity: item.isDeleting ? 0 : 1,
+                    transform: item.isDeleting ? "translateX(-20px)" : "translateX(0)",
+                    height: item.isDeleting ? "0px" : "32px",
+                    marginBottom: item.isDeleting ? "0px" : "6px",
+                    overflow: item.isDeleting ? "hidden" : "visible",
+                    zIndex: activeMenuId === item.sessionId ? 50 : 1
+                  }}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap flex-1 text-left">
                     {item.companyName}
@@ -210,7 +259,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                     className="flex items-center gap-1.5"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {isHovered ? (
+                    {isHovered || activeMenuId === item.sessionId ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -220,7 +269,11 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               : item.sessionId,
                           );
                         }}
-                        className="bg-transparent border-none cursor-pointer flex items-center justify-center h-6 w-6 rounded text-sm text-[#71717a] dark:text-zinc-400 transition-all duration-150 hover:bg-[#e4e4e7] dark:hover:bg-zinc-800 hover:text-[#18181b] dark:hover:text-zinc-50"
+                        className="border-none cursor-pointer flex items-center justify-center h-6 w-6 rounded-md text-sm transition-all duration-150 hover:bg-[var(--bg-hover)]"
+                        style={{ 
+                          color: activeMenuId === item.sessionId ? "var(--text-h)" : "var(--text)", 
+                          backgroundColor: activeMenuId === item.sessionId ? "var(--bg-hover)" : "transparent" 
+                        }}
                       >
                         ⋮
                       </button>
@@ -230,7 +283,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           viewBox="0 0 24 24"
                           width="12"
                           height="12"
-                          fill="#71717a"
+                          fill="var(--text)"
                           className="shrink-0 mr-3"
                         >
                           <path d="M16 12V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v8l-2 2v2h5.2v6l1.3 1.3L13.8 18v-2H19v-2l-2-2z" />
@@ -241,13 +294,17 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
                   {/* 드롭다운 메뉴 */}
                   {activeMenuId === item.sessionId && (
-                    <div className="absolute right-3 top-7 bg-white dark:bg-zinc-900 shadow-[0_4px_20px_rgba(0,0,0,0.08)] rounded-md p-1 z-[1010] w-[100px] border border-solid border-[#e4e4e7] dark:border-zinc-800 flex flex-col gap-0.5">
+                    <div 
+                      className="absolute right-3 top-7 shadow-[0_4px_20px_rgba(0,0,0,0.08)] rounded-md p-1 z-[1010] w-[100px] border border-solid flex flex-col gap-0.5"
+                      style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
+                    >
                       <button
                         onClick={(e) => {
                           togglePin(item.sessionId, e);
                           setActiveMenuId(null);
                         }}
-                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-normal text-[#18181b] dark:text-zinc-200 cursor-pointer transition-colors duration-150 hover:bg-[#f4f4f5] dark:hover:bg-zinc-800"
+                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-semibold cursor-pointer transition-colors duration-150 hover:bg-[var(--bg-hover)]"
+                        style={{ color: "var(--text-h)" }}
                       >
                         {isPinned ? "고정 해제" : "고정"}
                       </button>
@@ -256,7 +313,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           handleDeleteSession(item.sessionId, e);
                           setActiveMenuId(null);
                         }}
-                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-normal text-[#ef4444] cursor-pointer transition-colors duration-150 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        className="w-full text-left py-1.5 px-2 bg-transparent border-none rounded text-xs font-semibold text-[#ef4444] cursor-pointer transition-colors duration-150 hover:bg-red-500/10"
                       >
                         삭제
                       </button>
@@ -268,6 +325,14 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           )}
         </div>
       </aside>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="대화 삭제"
+        message="이 대화 내역을 정말 삭제하시겠습니까?"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </>
   );
 };

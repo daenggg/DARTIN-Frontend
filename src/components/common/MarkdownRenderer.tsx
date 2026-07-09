@@ -12,7 +12,7 @@ const parseInline = (text: string): React.ReactNode[] => {
   return parts.map((part, idx) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={idx} style={{ fontWeight: "700", color: "#0f172a" }}>
+        <strong key={idx} style={{ fontWeight: "700", color: "var(--text-h)" }}>
           {part.slice(2, -2)}
         </strong>
       );
@@ -22,12 +22,12 @@ const parseInline = (text: string): React.ReactNode[] => {
         <code
           key={idx}
           style={{
-            backgroundColor: "#f1f5f9",
+            backgroundColor: "var(--bg)",
             padding: "2px 6px",
             borderRadius: "4px",
             fontSize: "0.9em",
             fontFamily: "monospace",
-            color: "#ef4444",
+            color: "var(--accent)",
           }}
         >
           {part.slice(1, -1)}
@@ -55,7 +55,6 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       {lines.map((line, lineIdx) => {
         const trimmed = line.trim();
 
-        // 1. 제목 (Headers)
         if (trimmed.startsWith("### ")) {
           return (
             <h5
@@ -64,7 +63,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 margin: "12px 0 6px 0",
                 fontWeight: "700",
                 fontSize: "1.1em",
-                color: "#0f172a",
+                color: "var(--text-h)",
               }}
             >
               {parseInline(trimmed.substring(4))}
@@ -79,7 +78,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 margin: "14px 0 8px 0",
                 fontWeight: "700",
                 fontSize: "1.25em",
-                color: "#0f172a",
+                color: "var(--text-h)",
               }}
             >
               {parseInline(trimmed.substring(3))}
@@ -94,7 +93,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 margin: "16px 0 10px 0",
                 fontWeight: "700",
                 fontSize: "1.4em",
-                color: "#0f172a",
+                color: "var(--text-h)",
               }}
             >
               {parseInline(trimmed.substring(2))}
@@ -102,7 +101,6 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           );
         }
 
-        // 2. 글머리 기호 (Bullet list)
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           return (
             <div
@@ -116,7 +114,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             >
               <span
                 style={{
-                  color: "#71717a",
+                  color: "var(--text)",
                   fontSize: "1.1em",
                   lineHeight: "1.6",
                 }}
@@ -130,7 +128,6 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           );
         }
 
-        // 3. 번호 매기기 목록 (Numbered list)
         const numMatch = trimmed.match(/^(\d+)\.\s(.*)/);
         if (numMatch) {
           return (
@@ -145,7 +142,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             >
               <span
                 style={{
-                  color: "#71717a",
+                  color: "var(--text)",
                   fontWeight: "600",
                   minWidth: "16px",
                   textAlign: "right",
