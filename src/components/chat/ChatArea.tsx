@@ -69,9 +69,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   };
 
   return (
-    <section className="w-full bg-white dark:bg-[#121318] flex flex-col h-full box-border font-sans relative">
-      {/* 챗 상단 간결한 토글 트리거 영역 */}
-      <div className="h-11 px-5 border-b border-solid border-[#e2e8f0] dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-[#121318] shrink-0 box-border relative">
+    <section 
+      className="w-full flex flex-col h-full box-border font-sans relative"
+      style={{ background: "var(--bg-panel)", color: "var(--text)" }}
+    >
+      <div 
+        className="h-11 px-5 border-b border-solid flex items-center justify-between shrink-0 box-border relative"
+        style={{ borderBottomColor: "var(--border)", background: "var(--bg-panel)" }}
+      >
         <button
           onClick={onToggleSidebar}
           title={isSidebarOpen ? "최근 대화 닫기" : "최근 대화 열기"}
@@ -121,7 +126,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="custom-scrollbar flex-1 p-6 px-5 overflow-y-auto flex flex-col gap-6 bg-white dark:bg-[#121318]"
+        className="custom-scrollbar flex-1 p-6 px-5 overflow-y-auto flex flex-col gap-6"
+        style={{ background: "var(--bg-panel)" }}
       >
         {messages.map((msg, index) => (
           <div
@@ -129,7 +135,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             className={`flex w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
           >
             {msg.sender === "user" ? (
-              <div className="max-w-[85%] py-2.5 px-4 rounded-xl bg-[#f4f4f5] dark:bg-zinc-800 text-[#18181b] dark:text-[#f4f4f5] text-md leading-relaxed text-left">
+              <div 
+                className="max-w-[85%] py-2.5 px-4 rounded-xl text-md leading-relaxed text-left"
+                style={{ background: "var(--bg)", color: "var(--text-h)" }}
+              >
                 {msg.text}
               </div>
             ) : (
@@ -138,7 +147,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   <div className="w-6 h-6 rounded-3xl bg-[#777777] flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     AI
                   </div>
-                  <div className="text-[#18181b] dark:text-[#f4f4f5] text-md leading-relaxed pt-1 whitespace-pre-wrap text-left flex-1">
+                  <div 
+                    className="text-md leading-relaxed pt-1 whitespace-pre-wrap text-left flex-1"
+                    style={{ color: "var(--text-h)" }}
+                  >
                     <style>{`
                       @keyframes wordWave {
                         0%, 100% { transform: translateY(0); }
@@ -146,7 +158,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                       }
                     `}</style>
                     {msg.isStatus ? (
-                      <div className="inline-flex flex-wrap text-[#71717a] dark:text-zinc-400 font-medium">
+                      <div className="inline-flex flex-wrap font-medium" style={{ color: "var(--text)" }}>
                         {msg.text.split("").map((char, index) => (
                           <span
                             key={index}
@@ -167,83 +179,22 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   </div>
                 </div>
 
-                {/* 기업 후보군 커스텀 드롭다운 렌더링 (세로 공간 최소화 및 고급스러운 팝업 리스트) */}
                 {msg.candidates && msg.candidates.length > 0 && (
-                  <div className="custom-select-container relative ml-9 mt-2.5 max-w-[200px] w-full box-border">
-                    {/* 드롭다운 트리거 버튼 */}
-                    <button
-                      onClick={() =>
-                        setOpenDropdownIndex(
-                          openDropdownIndex === index ? null : index,
-                        )
-                      }
-                      className="w-full flex items-center justify-between bg-white dark:bg-zinc-900 border border-solid border-[#cbd5e1] dark:border-zinc-800 rounded-xl p-2.5 px-4 text-xs font-bold text-[#18181b] dark:text-[#f4f4f5] cursor-pointer hover:border-[#4f46e5] dark:hover:border-indigo-500 hover:shadow-[0_2px_8px_rgba(79,70,229,0.04)] dark:hover:shadow-[0_2px_8px_rgba(99,102,241,0.08)] transition-all duration-150 relative box-border select-none"
-                    >
-                      <span>분석할 기업 선택하기...</span>
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`text-zinc-400 dark:text-zinc-500 transition-transform duration-200 shrink-0 ${openDropdownIndex === index ? "transform rotate-180" : ""}`}
+                  <div className="flex flex-wrap gap-2 ml-9 mt-2 max-w-[85%] box-border">
+                    {msg.candidates.map((cand, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => onSelectCandidate(cand.corp_code, cand.corp_name)}
+                        className="py-1.5 px-3.5 rounded-full text-xs font-bold border border-solid cursor-pointer transition-all duration-150 select-none hover:bg-[var(--bg-hover)] hover:text-[var(--accent)] hover:border-[var(--accent)] hover:scale-[1.02] active:scale-[0.98] hover:shadow-sm"
+                        style={{
+                          background: "var(--bg-panel)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-h)"
+                        }}
                       >
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </button>
-
-                    {/* 커스텀 플로팅 팝오버 리스트 */}
-                    {openDropdownIndex === index && (
-                      <>
-                        <style>{`
-                          .custom-dropdown-scrollbar::-webkit-scrollbar {
-                            width: 5px;
-                          }
-                          .custom-dropdown-scrollbar::-webkit-scrollbar-track {
-                            background: transparent;
-                          }
-                          .custom-dropdown-scrollbar::-webkit-scrollbar-thumb {
-                            background: #cbd5e1;
-                            border-radius: 4px;
-                          }
-                          .custom-dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
-                            background: #94a3b8;
-                          }
-                          .dark .custom-dropdown-scrollbar::-webkit-scrollbar-thumb {
-                            background: #3f3f46;
-                          }
-                          .dark .custom-dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
-                            background: #52525b;
-                          }
-                        `}</style>
-                        <div
-                          className="custom-dropdown-scrollbar absolute left-0 right-0 top-[115%] bg-white/95 dark:bg-[#181920]/95 border border-solid border-[#e2e8f0] dark:border-zinc-800 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.06),0_8px_16px_-6px_rgba(0,0,0,0.03)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.4)] backdrop-blur-md overflow-y-auto flex flex-col p-1.5 gap-0.5 z-50 box-border"
-                          style={{
-                            scrollbarWidth: "thin",
-                            maxHeight: "150px",
-                          }}
-                        >
-                          {msg.candidates.map((cand, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => {
-                                onSelectCandidate(
-                                  cand.corp_code,
-                                  cand.corp_name,
-                                );
-                                setOpenDropdownIndex(null);
-                              }}
-                              className="w-full text-left p-1.5 px-3 rounded-lg text-xs font-bold text-[#18181b] dark:text-[#f4f4f5] hover:bg-[#f5f3ff] dark:hover:bg-indigo-950/40 hover:text-[#4f46e5] dark:hover:text-indigo-400 transition-colors duration-150 cursor-pointer border-none bg-transparent select-none box-border"
-                            >
-                              {cand.corp_name}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
+                        {cand.corp_name}
+                      </button>
+                    ))}
                   </div>
                 )}
 
@@ -255,7 +206,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                         sessionStorage.removeItem("accessToken");
                         window.location.href = "/login";
                       }}
-                      className="bg-[#4f46e5] dark:bg-indigo-600 text-white rounded-xl py-2 px-4 text-xs font-bold hover:bg-[#4338ca] dark:hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer border-none select-none"
+                      className="text-white rounded-xl py-2 px-4 text-xs font-bold transition-colors shadow-sm cursor-pointer border-none select-none hover:opacity-90"
+                      style={{ background: "var(--accent)" }}
                     >
                       로그인 화면으로 이동
                     </button>
@@ -273,7 +225,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <button
           type="button"
           onClick={scrollToBottom}
-          className="absolute bottom-20 right-3 bg-white dark:bg-zinc-800 text-[#18181b] dark:text-zinc-200 border border-solid border-[#cbd5e1] dark:border-zinc-700 rounded-full py-2 px-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer transition-all duration-150 hover:bg-slate-50 dark:hover:bg-zinc-700 hover:-translate-y-0.5 z-10"
+          className="absolute bottom-20 right-3 border border-solid rounded-full py-2 px-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-center cursor-pointer transition-all duration-150 z-10"
+          style={{ background: "var(--bg-panel)", borderColor: "var(--border)", color: "var(--text-h)" }}
         >
           <svg
             width="12"
@@ -291,12 +244,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         </button>
       )}
 
-      {/* 입력창 */}
       <form
         onSubmit={onSendMessage}
-        className="p-2.5 px-5 bg-transparent dark:bg-transparent border-t border-solid border-[#f4f4f5] dark:border-zinc-800"
+        className="p-2.5 px-5 bg-transparent border-t border-solid"
+        style={{ borderTopColor: "var(--border)" }}
       >
-        <div className="flex items-center bg-transparent dark:bg-transparent rounded-md px-3.5 gap-3 h-9 transition-colors duration-150 border border-solid border-[#cbd5e1] dark:border-zinc-800 focus-within:border-black dark:focus-within:border-zinc-500">
+        <div 
+          className="flex items-center rounded-md px-3.5 gap-3 h-9 transition-colors duration-150 border border-solid"
+          style={{ borderColor: "var(--border)" }}
+        >
           <input
             type="text"
             value={inputValue}
@@ -306,12 +262,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 ? "분석할 기업명을 입력하세요..."
                 : "추가 질문을 입력하세요..."
             }
-            className="flex-1 border-none bg-transparent outline-none text-sm text-[#18181b] dark:text-[#f4f4f5] font-sans"
+            className="flex-1 border-none bg-transparent outline-none text-sm font-sans"
+            style={{ color: "var(--text-h)" }}
           />
           <button
             type="submit"
             title="전송"
-            className="border-none bg-transparent text-[#18181b] dark:text-[#f4f4f5] cursor-pointer flex items-center justify-center h-7 w-7 rounded-full bg-[#f4f4f5] dark:bg-transparent transition-colors duration-150 hover:bg-[#e4e4e7] dark:hover:bg-transparent shrink-0"
+            className="border-none bg-transparent cursor-pointer flex items-center justify-center h-7 w-7 rounded-full shrink-0"
+            style={{ color: "var(--text-h)" }}
           >
             <svg
               width="14"
