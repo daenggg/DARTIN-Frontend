@@ -294,8 +294,10 @@ const Login = (): React.JSX.Element => {
       {isExchanging && (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/35 backdrop-blur-[2px] z-50 transition-all duration-200">
           <div className="bg-white dark:bg-[#181920] border border-solid border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-3.5 max-w-[240px] w-full text-center box-border">
-            {/* 회전식 모던 스피너 */}
-            <div className="w-7 h-7 border-[3px] border-solid border-zinc-100 border-t-[#4f46e5] dark:border-zinc-800 dark:border-t-indigo-500 rounded-full animate-spin" />
+            <div 
+              className="w-7 h-7 border-[3px] border-solid rounded-full animate-spin" 
+              style={{ borderColor: "rgba(0,0,0,0.05)", borderTopColor: "var(--accent)" }}
+            />
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-200 select-none">
               카카오 로그인 처리 중...
             </span>
