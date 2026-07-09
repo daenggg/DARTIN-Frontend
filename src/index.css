@@ -3,7 +3,6 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Font Sizing Variables */
   --text-xs: 13px;
   --text-sm: 14.5px;
   --text-md: 15.5px;
@@ -15,162 +14,60 @@
   --text-5xl: 31px;
   --text-6xl: 40px;
   --text-7xl: 60px;
-
-  /* Color Variables */
-  --color-brand-text: #6b6375;
-  --color-brand-heading: #08060d;
-  --color-brand-bg: #ffffff;
-  --color-brand-border: #e5e4e7;
-  --color-brand-code-bg: #f4f3ec;
-  --color-brand-accent: #aa3bff;
-  --color-brand-accent-bg: rgba(170, 59, 255, 0.1);
-  --color-brand-accent-border: rgba(170, 59, 255, 0.5);
 }
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
+  --bg: #eee7de;
+  --bg-panel: #f8f8f8;
+  --bg-hover: #e2ddd0;
+  --text: #4c483d;
+  --text-h: #1c1b1a;
+  --border: #d7d4c8;
+  --accent: #d4543d;
+  --accent-bg: rgba(212, 84, 61, 0.08);
+  --accent-border: rgba(212, 84, 61, 0.4);
   --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+    rgba(0, 0, 0, 0.05) 0 10px 15px -3px, rgba(0, 0, 0, 0.03) 0 4px 6px -2px;
+
+  --chart-revenue: #d4543d;
+  --chart-profit: #4c483d;
+  --chart-text-legend: #1c1b1a;
+  --chart-text-ticks: #2c2b2a;
+  --chart-grid: rgba(0, 0, 0, 0.05);
 
   --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  /* Font Sizing Variables */
-  --fs-xs: 13px;
-  --fs-sm: 14.5px;
-  --fs-md: 15.5px;
-  --fs-lg: 17.5px;
-  --fs-xl: 19px;
-  --fs-2xl: 20.5px;
-  --fs-3xl: 23px;
-  --fs-4xl: 27px;
-  --fs-5xl: 31px;
-  --fs-6xl: 40px;
-  --fs-7xl: 60px;
-
-  font: var(--fs-3xl)/145% var(--sans);
-  letter-spacing: 0.18px;
+  font: var(--text-3xl)/145% var(--sans);
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 
   @media (max-width: 1024px) {
-    font-size: var(--fs-xl);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #4b5563;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    font-size: var(--text-xl);
   }
 }
 
 .dark {
-  /* 다크모드 시 눈부신 순백색(#ffffff) 텍스트를 방지하기 위해 소프트 실버/오프화이트 톤으로 오버라이드 */
-  --color-white: #e4e4e7;
-  --color-zinc-50: #e4e4e7;
-  --color-zinc-100: #d4d4d8;
-  --color-zinc-200: #a1a1aa;
+  --bg: #070c1c;
+  --bg-panel: #1f2230;
+  --bg-hover: #1c233c;
+  --text: #94a3b8;
+  --text-h: #d0d1d2;
+  --border: #4b5057;
+  --accent: #e05a47;
+  --accent-bg: rgba(224, 90, 71, 0.12);
+  --accent-border: rgba(224, 90, 71, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
-  /* 다크모드 시 경계선이 선명하고 뚜렷하게 도드라져 보이도록 고대비 컬러 매핑 */
-  --color-zinc-800: #4b5563; /* 기존 zinc-600 수준으로 선명도 강화 */
-  --color-zinc-700: #6b7280; /* 기존 zinc-500 수준으로 선명도 강화 */
-
-  /* 전역 테마 변수 오버라이드로 가장자리 빈 공간 색상 불일치 해결 */
-  --bg: #131929;
-  --text: #e4e4e7;
-  --text-h: #ffffff;
-  --border: #4b5563;
+  --chart-revenue: #e05a47;
+  --chart-profit: #94a3b8;
+  --chart-text-legend: #f1f5f9;
+  --chart-text-ticks: #cbd5e1;
+  --chart-grid: rgba(255, 255, 255, 0.08);
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: var(--fs-7xl);
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: var(--fs-6xl);
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: var(--fs-4xl);
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: var(--fs-3xl);
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: var(--fs-lg);
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
-
-/* 글로벌 콤팩트 스크롤바 디자인 (대화 피드, 사이드바, 대시보드 공통 적용) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -186,7 +83,6 @@ code {
   background: #94a3b8;
 }
 
-/* 다크모드 전용 컴팩트 어두운 스크롤바 */
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #3f3f46;
 }
@@ -194,7 +90,6 @@ code {
   background: #52525b;
 }
 
-/* 파이어폭스(Firefox) 스크롤바 스펙 매핑 */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
