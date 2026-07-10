@@ -13,7 +13,7 @@ import FinancialsTab from "../components/company/tabs/FinancialsTab";
 import NewsTab from "../components/company/tabs/NewsTab";
 import DashboardNavbar from "../components/company/DashboardNavbar";
 
-import { fetchCompanyAnalysis, searchCompanies } from "../services/companyApi";
+import { fetchCompanyAnalysisStream, searchCompanies } from "../services/companyApi";
 import { logout } from "../services/authApi";
 import { fetchChatSessionDetail } from "../services/chatApi";
 import {
@@ -160,7 +160,14 @@ const Home = (): React.JSX.Element => {
       ]);
     }
     setSelectedCompany(corpName);
-    setAnalysisData(undefined);
+    setAnalysisData({
+      basicInfo: undefined,
+      financialInfo: undefined,
+      news: undefined,
+      aiAnalysis: undefined,
+      jobLinks: undefined,
+      sessionId: undefined,
+    });
 
     setMessages((prev) => [
       ...prev,
@@ -173,52 +180,70 @@ const Home = (): React.JSX.Element => {
     ]);
 
     try {
-      const data = await fetchCompanyAnalysis(corpCode);
+      await fetchCompanyAnalysisStream(corpCode, (type, data) => {
+        if (type === "status") {
+          setMessages((prev) => {
+            const targetIdx = prev.findIndex(
+              (m) => m.sender === "ai" && m.isStreaming && m.isStatus
+            );
+            if (targetIdx !== -1) {
+              const nextMsgs = [...prev];
+              nextMsgs[targetIdx] = {
+                ...nextMsgs[targetIdx],
+                text: data,
+              };
+              return nextMsgs;
+            }
+            return prev;
+          });
+        } else if (type === "basicInfo") {
+          setAnalysisData((prev) => ({ ...prev, basicInfo: data }));
+        } else if (type === "financialInfo") {
+          setAnalysisData((prev) => ({ ...prev, financialInfo: data }));
+        } else if (type === "news") {
+          setAnalysisData((prev) => ({ ...prev, news: data }));
+        } else if (type === "aiAnalysis") {
+          setAnalysisData((prev) => ({ ...prev, aiAnalysis: data }));
+        } else if (type === "jobLinks") {
+          setAnalysisData((prev) => ({ ...prev, jobLinks: data }));
+        } else if (type === "done") {
+          const sessionId = data?.sessionId;
+          if (sessionId) {
+            sessionStorage.setItem("currentSessionId", sessionId);
+            setAnalysisData((prev) => ({ ...prev, sessionId }));
+          }
 
-      setAnalysisData({
-        basicInfo: data.basicInfo,
-        financialInfo: data.financialInfo,
-        news: data.news,
-        aiAnalysis: data.aiAnalysis,
-        jobLinks: data.jobLinks,
-        sessionId: data.session?.sessionId,
-      });
-
-      if (data.session?.sessionId) {
-        sessionStorage.setItem("currentSessionId", data.session.sessionId);
-      }
-
-      setMessages((prev) => {
-        const targetIdx = prev.findIndex(
-          (m) => m.sender === "ai" && m.text.includes("수집 및 분석하는 중입니다")
-        );
-        if (targetIdx !== -1) {
-          const nextMsgs = [...prev];
-          nextMsgs[targetIdx] = {
-            sender: "ai",
-            text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
-          };
-          return nextMsgs;
+          setMessages((prev) => {
+            const targetIdx = prev.findIndex(
+              (m) => m.sender === "ai" && m.isStreaming
+            );
+            if (targetIdx !== -1) {
+              const nextMsgs = [...prev];
+              nextMsgs[targetIdx] = {
+                sender: "ai",
+                text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
+                isStreaming: false,
+                isStatus: false,
+              };
+              return nextMsgs;
+            }
+            return prev;
+          });
         }
-        return [
-          ...prev,
-          {
-            sender: "ai",
-            text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
-          },
-        ];
       });
     } catch (err) {
       console.error(err);
       setMessages((prev) => {
         const targetIdx = prev.findIndex(
-          (m) => m.sender === "ai" && m.text.includes("수집 및 분석하는 중입니다")
+          (m) => m.sender === "ai" && m.isStreaming
         );
         if (targetIdx !== -1) {
           const nextMsgs = [...prev];
           nextMsgs[targetIdx] = {
             sender: "ai",
             text: "기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+            isStreaming: false,
+            isStatus: false,
           };
           return nextMsgs;
         }
