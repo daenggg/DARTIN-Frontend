@@ -35,24 +35,35 @@ const EmptyState: React.FC = () => (
   </div>
 );
 
-const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
-  const basicInfo = analysisData?.basicInfo;
+const SkeletonBlock: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = "", style }) => (
+  <div
+    className={`skeleton-shimmer rounded ${className}`}
+    style={style}
+  />
+);
 
-  if (!basicInfo) {
+const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
+  if (!analysisData) {
     return <EmptyState />;
   }
 
-  const leftItems = [
-    { label: "CEO (대표이사)", value: basicInfo.ceo },
-    { label: "설립일", value: `${basicInfo.establishedYear}년` },
-    { label: "직원 수 (임직원)", value: basicInfo.employeeCount ? `${basicInfo.employeeCount.toLocaleString()}명` : "정보 없음" },
-  ];
+  const basicInfo = analysisData.basicInfo;
 
-  const rightItems = [
-    { label: "본사 소재지", value: basicInfo.address },
-    { label: "주요 사업", value: basicInfo.industry || "기타 제조/서비스업" },
-    { label: "상장 여부", value: basicInfo.isListed ? `${basicInfo.stockMarket || "KOSPI"} 상장` : "비상장" },
-  ];
+  const leftItems = basicInfo
+    ? [
+        { label: "CEO (대표이사)", value: basicInfo.ceo },
+        { label: "설립일", value: `${basicInfo.establishedYear}년` },
+        { label: "직원 수 (임직원)", value: basicInfo.employeeCount ? `${basicInfo.employeeCount.toLocaleString()}명` : "정보 없음" },
+      ]
+    : [];
+
+  const rightItems = basicInfo
+    ? [
+        { label: "본사 소재지", value: basicInfo.address },
+        { label: "주요 사업", value: basicInfo.industry || "기타 제조/서비스업" },
+        { label: "상장 여부", value: basicInfo.isListed ? `${basicInfo.stockMarket || "KOSPI"} 상장` : "비상장" },
+      ]
+    : [];
 
   return (
     <div 
@@ -79,34 +90,60 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
           className="p-6 flex flex-col gap-4 border-solid md:border-r max-md:border-b box-border"
           style={{ borderRightColor: "var(--border)", borderBottomColor: "var(--border)" }}
         >
-          {leftItems.map((item, idx) => (
-            <div 
-              key={idx} 
-              className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
-              style={{ borderBottomColor: "var(--border)" }}
-            >
-              <span className="font-semibold uppercase tracking-wider text-[10px] shrink-0" style={{ color: "var(--text)" }}>{item.label}</span>
-              <span className="font-medium text-right pl-4 truncate max-w-[240px]" style={{ color: "var(--text-h)" }} title={item.value}>
-                {item.value}
-              </span>
-            </div>
-          ))}
+          {basicInfo ? (
+            leftItems.map((item, idx) => (
+              <div 
+                key={idx} 
+                className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
+                style={{ borderBottomColor: "var(--border)" }}
+              >
+                <span className="font-semibold uppercase tracking-wider text-[10px] shrink-0" style={{ color: "var(--text)" }}>{item.label}</span>
+                <span className="font-medium text-right pl-4 truncate max-w-[240px]" style={{ color: "var(--text-h)" }} title={item.value}>
+                  {item.value}
+                </span>
+              </div>
+            ))
+          ) : (
+            [1, 2, 3].map((i) => (
+              <div 
+                key={i} 
+                className="flex justify-between items-baseline py-2.5 border-b border-solid text-sm"
+                style={{ borderBottomColor: "var(--border)" }}
+              >
+                <SkeletonBlock style={{ width: "80px", height: "12px" }} />
+                <SkeletonBlock style={{ width: "140px", height: "12px" }} />
+              </div>
+            ))
+          )}
         </div>
 
         {/* 우측 정보 컬럼 */}
         <div className="p-6 flex flex-col gap-4 box-border">
-          {rightItems.map((item, idx) => (
-            <div 
-              key={idx} 
-              className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
-              style={{ borderBottomColor: "var(--border)" }}
-            >
-              <span className="font-semibold uppercase tracking-wider text-[10px] shrink-0" style={{ color: "var(--text)" }}>{item.label}</span>
-              <span className="font-medium text-right pl-4 truncate max-w-[240px]" style={{ color: "var(--text-h)" }} title={item.value}>
-                {item.value}
-              </span>
-            </div>
-          ))}
+          {basicInfo ? (
+            rightItems.map((item, idx) => (
+              <div 
+                key={idx} 
+                className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
+                style={{ borderBottomColor: "var(--border)" }}
+              >
+                <span className="font-semibold uppercase tracking-wider text-[10px] shrink-0" style={{ color: "var(--text)" }}>{item.label}</span>
+                <span className="font-medium text-right pl-4 truncate max-w-[240px]" style={{ color: "var(--text-h)" }} title={item.value}>
+                  {item.value}
+                </span>
+              </div>
+            ))
+          ) : (
+            [1, 2, 3].map((i) => (
+              <div 
+                key={i} 
+                className="flex justify-between items-baseline py-2.5 border-b border-solid text-sm"
+                style={{ borderBottomColor: "var(--border)" }}
+              >
+                <SkeletonBlock style={{ width: "70px", height: "12px" }} />
+                <SkeletonBlock style={{ width: "160px", height: "12px" }} />
+              </div>
+            ))
+          )}
         </div>
       </div>
 
