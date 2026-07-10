@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 // 레이아웃 & 공통 컴포넌트 임포트
 import ChatHistorySidebar from "../components/chat/ChatHistorySidebar";
 import ChatArea from "../components/chat/ChatArea";
+import ConfirmModal from "../components/common/ConfirmModal";
+import { useResizer } from "../hooks/useResizer";
 
 // 기업 정보 & 탭 컴포넌트 임포트
 import DashboardTab from "../components/company/tabs/DashboardTab";
@@ -12,30 +14,26 @@ import FinancialsTab from "../components/company/tabs/FinancialsTab";
 import NewsTab from "../components/company/tabs/NewsTab";
 import DashboardNavbar from "../components/company/DashboardNavbar";
 
-import { fetchCompanyAnalysis } from "../services/companyApi";
-import type {
-  CompanyBasicInfo,
-  FinancialInfoMap,
-  NewsItem,
-  JobLinks,
+import {
+  fetchCompanyAnalysisStream,
+  searchCompanies,
 } from "../services/companyApi";
-import axios from "axios";
-
-interface Message {
-  sender: "user" | "ai";
-  text: string;
-  isStreaming?: boolean;
-  isStatus?: boolean;
-  candidates?: Array<{ corp_name: string; corp_code: string }>;
-  isLoginError?: boolean;
-}
+import { logout } from "../services/authApi";
+import { fetchChatSessionDetail } from "../services/chatApi";
+import {
+  type CompanyBasicInfo,
+  type FinancialInfoMap,
+  type NewsItem,
+  type JobLinks,
+  type Message,
+} from "../types/index";
 
 const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("사용자");
   const [activeTab, setActiveTab] = useState<string>("대시보드");
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => 
-    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => (localStorage.getItem("theme") as "light" | "dark") || "light",
   );
 
   useEffect(() => {
@@ -50,10 +48,12 @@ const Home = (): React.JSX.Element => {
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
-  const [leftWidth, setLeftWidth] = useState<number>(() =>
-    Math.round(window.innerWidth * 0.35),
-  ); // 기본 비율 3.5 : 6.5 (채팅 3.5 : 대시보드 6.5)
-  const [isResizing, setIsResizing] = useState<boolean>(false);
+
+  // 타 기업 감지 시 모달 상태 관리
+  const [detectNewCompany, setDetectNewCompany] = useState<string | null>(null);
+  const [isNewCompanyModalOpen, setIsNewCompanyModalOpen] =
+    useState<boolean>(false);
+  const { leftWidth, isResizing, handleMouseDown } = useResizer();
 
   // 실시간 수집 데이터 상태 관리
   const [analysisData, setAnalysisData] = useState<
@@ -67,39 +67,6 @@ const Home = (): React.JSX.Element => {
       }
     | undefined
   >(undefined);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      let newWidth = e.clientX;
-      const minWidth = 320;
-      const maxWidth = window.innerWidth * 0.6; // 최대 화면의 60%까지
-      if (newWidth < minWidth) newWidth = minWidth;
-      if (newWidth > maxWidth) newWidth = maxWidth;
-      setLeftWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
-
-  // 채팅 상태 관리
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
@@ -107,6 +74,44 @@ const Home = (): React.JSX.Element => {
     },
   ]);
   const [inputValue, setInputValue] = useState<string>("");
+
+  const handleConfirmNewCompany = () => {
+    if (!detectNewCompany) return;
+    const newCorp = detectNewCompany;
+    setIsNewCompanyModalOpen(false);
+    setDetectNewCompany(null);
+
+    // 새 대화 세션 상태로 리셋
+    setMessages([
+      {
+        sender: "ai",
+        text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+      },
+    ]);
+    setSelectedCompany("새 문서");
+    setAnalysisData(undefined);
+    sessionStorage.removeItem("currentSessionId");
+
+    // 새로운 기업 후보군 검색 실행
+    setTimeout(() => {
+      executeCompanySearch(newCorp);
+    }, 50);
+  };
+
+  const handleCancelNewCompany = () => {
+    if (!detectNewCompany) return;
+    const canceledCorp = detectNewCompany;
+    setIsNewCompanyModalOpen(false);
+    setDetectNewCompany(null);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: `다른 기업(${canceledCorp})에 대한 질문이 감지되어 답변 생성이 취소되었습니다. 해당 기업 분석을 시작하려면 새 문서를 열고 진행해 주세요.`,
+      },
+    ]);
+  };
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
@@ -120,74 +125,74 @@ const Home = (): React.JSX.Element => {
     }
   }, []);
 
+  // 세션 상세 조회 및 복원 공통 헬퍼 함수
+  const loadSessionDetails = async (
+    sessionId: string,
+    fallbackCompanyName: string,
+  ) => {
+    try {
+      const detail = await fetchChatSessionDetail(sessionId);
+      if (detail) {
+        setAnalysisData({
+          basicInfo: detail.company.basicInfo,
+          financialInfo: detail.company.financialInfo,
+          news: detail.company.news,
+          aiAnalysis: detail.company.aiAnalysis,
+          jobLinks: detail.company.jobLinks,
+          sessionId: detail.sessionId || sessionId,
+        });
+
+        const resolvedCompanyName =
+          detail.company?.basicInfo?.companyName || fallbackCompanyName;
+        setSelectedCompany(resolvedCompanyName);
+        sessionStorage.setItem("currentSessionId", sessionId);
+
+        const mappedMsgs = detail.chat.messages.map((m: any) => ({
+          sender: m.role === "user" ? "user" : "ai",
+          text: m.content,
+        }));
+
+        setMessages(
+          mappedMsgs.length > 0
+            ? mappedMsgs
+            : [
+                {
+                  sender: "ai",
+                  text: `"${resolvedCompanyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.`,
+                },
+              ],
+        );
+      }
+    } catch (err: any) {
+      console.error("세션 상세 데이터 로드 실패:", err);
+      sessionStorage.removeItem("currentSessionId");
+      const status = err.response?.status;
+      if (status === 401 || status === 403) {
+        sessionStorage.removeItem("accessToken");
+        navigate("/login");
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: "대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
+          },
+        ]);
+      }
+    }
+  };
+
   // 새로고침 시 세션 유지 및 복원 처리
   useEffect(() => {
-    const restoreSession = async () => {
-      const storedSessionId = sessionStorage.getItem("currentSessionId");
-      if (storedSessionId && storedSessionId !== "New") {
-        const token = sessionStorage.getItem("accessToken");
-        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-        try {
-          const res = await axios.get(
-            `${BACKEND_URL}/api/chat/sessions/${storedSessionId}`,
-            {
-              headers: { Authorization: token ? `Bearer ${token}` : "" },
-            },
-          );
-          const detail = res.data;
-          if (detail) {
-            setAnalysisData({
-              basicInfo: detail.company.basicInfo,
-              financialInfo: detail.company.financialInfo,
-              news: detail.company.news,
-              aiAnalysis: detail.company.aiAnalysis,
-              jobLinks: detail.company.jobLinks,
-              sessionId: detail.sessionId || storedSessionId,
-            });
-            setSelectedCompany(detail.company.basicInfo.companyName);
-
-            // 복원된 채팅 기록 매핑
-            const mappedMsgs = detail.chat.messages.map((m: any) => ({
-              sender: m.role === "user" ? "user" : "ai",
-              text: m.content,
-            }));
-            setMessages(
-              mappedMsgs.length > 0
-                ? mappedMsgs
-                : [
-                    {
-                      sender: "ai",
-                      text: `"${detail.company.basicInfo.companyName}" 분석 대화가 복구되었습니다.`,
-                    },
-                  ],
-            );
-          }
-        } catch (err: any) {
-          console.error("Mount session restoration failed:", err);
-          sessionStorage.removeItem("currentSessionId");
-          if (err.response?.status === 401 || err.response?.status === 403) {
-            sessionStorage.removeItem("accessToken");
-            navigate("/login");
-          }
-        }
-      }
-    };
-
-    restoreSession();
+    const storedSessionId = sessionStorage.getItem("currentSessionId");
+    if (storedSessionId && storedSessionId !== "New") {
+      loadSessionDetails(storedSessionId, "이전 대화");
+    }
   }, []);
 
   const handleLogout = async () => {
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
-      await axios.post(
-        `${BACKEND_URL}/api/auth/logout`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        },
-      );
+      await logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -198,7 +203,11 @@ const Home = (): React.JSX.Element => {
     }
   };
 
-  const handleSelectCandidate = async (corpCode: string, corpName: string, isAutoTrigger = false) => {
+  const handleSelectCandidate = async (
+    corpCode: string,
+    corpName: string,
+    isAutoTrigger = false,
+  ) => {
     if (!isAutoTrigger) {
       setMessages((prev) => [
         ...prev,
@@ -206,7 +215,14 @@ const Home = (): React.JSX.Element => {
       ]);
     }
     setSelectedCompany(corpName);
-    setAnalysisData(undefined);
+    setAnalysisData({
+      basicInfo: undefined,
+      financialInfo: undefined,
+      news: undefined,
+      aiAnalysis: undefined,
+      jobLinks: undefined,
+      sessionId: undefined,
+    });
 
     setMessages((prev) => [
       ...prev,
@@ -219,52 +235,70 @@ const Home = (): React.JSX.Element => {
     ]);
 
     try {
-      const data = await fetchCompanyAnalysis(corpCode);
+      await fetchCompanyAnalysisStream(corpCode, (type, data) => {
+        if (type === "status") {
+          setMessages((prev) => {
+            const targetIdx = prev.findIndex(
+              (m) => m.sender === "ai" && m.isStreaming && m.isStatus,
+            );
+            if (targetIdx !== -1) {
+              const nextMsgs = [...prev];
+              nextMsgs[targetIdx] = {
+                ...nextMsgs[targetIdx],
+                text: data,
+              };
+              return nextMsgs;
+            }
+            return prev;
+          });
+        } else if (type === "basicInfo") {
+          setAnalysisData((prev) => ({ ...prev, basicInfo: data }));
+        } else if (type === "financialInfo") {
+          setAnalysisData((prev) => ({ ...prev, financialInfo: data }));
+        } else if (type === "news") {
+          setAnalysisData((prev) => ({ ...prev, news: data }));
+        } else if (type === "aiAnalysis") {
+          setAnalysisData((prev) => ({ ...prev, aiAnalysis: data }));
+        } else if (type === "jobLinks") {
+          setAnalysisData((prev) => ({ ...prev, jobLinks: data }));
+        } else if (type === "done") {
+          const sessionId = data?.sessionId;
+          if (sessionId) {
+            sessionStorage.setItem("currentSessionId", sessionId);
+            setAnalysisData((prev) => ({ ...prev, sessionId }));
+          }
 
-      setAnalysisData({
-        basicInfo: data.basicInfo,
-        financialInfo: data.financialInfo,
-        news: data.news,
-        aiAnalysis: data.aiAnalysis,
-        jobLinks: data.jobLinks,
-        sessionId: data.session?.sessionId,
-      });
-
-      if (data.session?.sessionId) {
-        sessionStorage.setItem("currentSessionId", data.session.sessionId);
-      }
-
-      setMessages((prev) => {
-        const targetIdx = prev.findIndex(
-          (m) => m.sender === "ai" && m.text.includes("수집 및 분석하는 중입니다")
-        );
-        if (targetIdx !== -1) {
-          const nextMsgs = [...prev];
-          nextMsgs[targetIdx] = {
-            sender: "ai",
-            text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
-          };
-          return nextMsgs;
+          setMessages((prev) => {
+            const targetIdx = prev.findIndex(
+              (m) => m.sender === "ai" && m.isStreaming,
+            );
+            if (targetIdx !== -1) {
+              const nextMsgs = [...prev];
+              nextMsgs[targetIdx] = {
+                sender: "ai",
+                text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
+                isStreaming: false,
+                isStatus: false,
+              };
+              return nextMsgs;
+            }
+            return prev;
+          });
         }
-        return [
-          ...prev,
-          {
-            sender: "ai",
-            text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
-          },
-        ];
       });
     } catch (err) {
       console.error(err);
       setMessages((prev) => {
         const targetIdx = prev.findIndex(
-          (m) => m.sender === "ai" && m.text.includes("수집 및 분석하는 중입니다")
+          (m) => m.sender === "ai" && m.isStreaming,
         );
         if (targetIdx !== -1) {
           const nextMsgs = [...prev];
           nextMsgs[targetIdx] = {
             sender: "ai",
             text: "기업 분석 리포트를 생성하는 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+            isStreaming: false,
+            isStatus: false,
           };
           return nextMsgs;
         }
@@ -281,9 +315,6 @@ const Home = (): React.JSX.Element => {
 
   // 1단계: 최초 기업명 검색 API 호출 공통 헬퍼 함수
   const executeCompanySearch = async (searchQuery: string) => {
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-
     setMessages((prev) => [
       ...prev,
       {
@@ -300,18 +331,19 @@ const Home = (): React.JSX.Element => {
     };
 
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
-        params: { search_query: searchQuery },
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
+      const resData = await searchCompanies(searchQuery);
 
-      const candidates = res.data?.companies;
-      const isSingleMatch = res.data?.isSingleMatch;
+      const candidates = resData?.companies;
+      const isSingleMatch = resData?.isSingleMatch;
 
       if (isSingleMatch && Array.isArray(candidates) && candidates.length > 0) {
         const singleCompany = candidates[0];
         setMessages((prev) => prev.slice(0, -1));
-        handleSelectCandidate(singleCompany.corpCode, singleCompany.corpName, true);
+        handleSelectCandidate(
+          singleCompany.corpCode,
+          singleCompany.corpName,
+          true,
+        );
         return;
       }
 
@@ -331,10 +363,7 @@ const Home = (): React.JSX.Element => {
             },
           ];
         } else {
-          return [
-            ...listWithoutLoading,
-            fallbackSearchMessage,
-          ];
+          return [...listWithoutLoading, fallbackSearchMessage];
         }
       });
     } catch (err: any) {
@@ -356,10 +385,7 @@ const Home = (): React.JSX.Element => {
         }
 
         if (status === 400 || status === 404) {
-          return [
-            ...listWithoutLoading,
-            fallbackSearchMessage,
-          ];
+          return [...listWithoutLoading, fallbackSearchMessage];
         }
 
         return [
@@ -405,7 +431,11 @@ const Home = (): React.JSX.Element => {
         if (contentType && contentType.includes("application/json")) {
           const json = await response.json();
           // [예외 케이스 처리] 단일 매칭(isSingleMatch: true)으로 기업명이 응답된 경우
-          if (json.isSingleMatch && Array.isArray(json.companyList) && json.companyList.length > 0) {
+          if (
+            json.isSingleMatch &&
+            Array.isArray(json.companyList) &&
+            json.companyList.length > 0
+          ) {
             const matchedCompany = json.companyList[0];
             // 1단계 최초 기업명 검색 GET API 자동 재호출
             setTimeout(() => {
@@ -477,6 +507,19 @@ const Home = (): React.JSX.Element => {
                     }
                     return prev;
                   });
+                } else if (eventType === "newCompany") {
+                  const newCorpName = eventData?.companyName;
+                  if (newCorpName) {
+                    setDetectNewCompany(newCorpName);
+                    setIsNewCompanyModalOpen(true);
+                    setMessages((prev) => {
+                      const last = prev[prev.length - 1];
+                      if (last && last.sender === "ai" && last.isStreaming) {
+                        return prev.slice(0, -1);
+                      }
+                      return prev;
+                    });
+                  }
                 } else if (eventType === "done") {
                   setMessages((prev) => {
                     const last = prev[prev.length - 1];
@@ -525,9 +568,10 @@ const Home = (): React.JSX.Element => {
           ...prev,
           {
             sender: "ai",
-            text: status === 401 || status === 403
-              ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
-              : "대화 응답을 수신하는 데 실패했습니다.",
+            text:
+              status === 401 || status === 403
+                ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
+                : "대화 응답을 수신하는 데 실패했습니다.",
             isLoginError: status === 401 || status === 403,
           },
         ]);
@@ -554,60 +598,7 @@ const Home = (): React.JSX.Element => {
       setAnalysisData(undefined);
       sessionStorage.removeItem("currentSessionId");
     } else {
-      setSelectedCompany(companyName);
-      sessionStorage.setItem("currentSessionId", sessionId);
-
-      const token = sessionStorage.getItem("accessToken");
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-      try {
-        const res = await axios.get(
-          `${BACKEND_URL}/api/chat/sessions/${sessionId}`,
-          {
-            headers: { Authorization: token ? `Bearer ${token}` : "" },
-          },
-        );
-        const detail = res.data;
-        if (detail) {
-          setAnalysisData({
-            basicInfo: detail.company.basicInfo,
-            financialInfo: detail.company.financialInfo,
-            news: detail.company.news,
-            aiAnalysis: detail.company.aiAnalysis,
-            jobLinks: detail.company.jobLinks,
-            sessionId: detail.sessionId || sessionId,
-          });
-
-          // 복원된 채팅 메시지 매핑 (role -> sender)
-          const mappedMsgs = detail.chat.messages.map((m: any) => ({
-            sender: m.role === "user" ? "user" : "ai",
-            text: m.content,
-          }));
-
-          setMessages(
-            mappedMsgs.length > 0
-              ? mappedMsgs
-              : [
-                  {
-                    sender: "ai",
-                    text: `"${companyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.`,
-                  },
-                ],
-          );
-        }
-      } catch (err: any) {
-        console.error("Failed to load session details:", err);
-        const status = err.response?.status;
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "ai",
-            text: status === 401 || status === 403
-              ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
-              : "대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
-            isLoginError: status === 401 || status === 403,
-          },
-        ]);
-      }
+      loadSessionDetails(sessionId, companyName);
     }
   };
 
@@ -652,7 +643,7 @@ const Home = (): React.JSX.Element => {
   };
 
   return (
-    <div 
+    <div
       className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen flex font-sans overflow-hidden box-border"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
@@ -684,13 +675,13 @@ const Home = (): React.JSX.Element => {
         <div
           onMouseDown={handleMouseDown}
           className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
-          style={{ 
+          style={{
             borderLeftColor: "var(--border)",
-            backgroundColor: isResizing ? "var(--accent)" : "transparent"
+            backgroundColor: isResizing ? "var(--accent)" : "transparent",
           }}
         />
 
-        <div 
+        <div
           className="flex-1 h-full flex flex-col overflow-hidden box-border"
           style={{ background: "var(--bg-panel)" }}
         >
@@ -709,6 +700,31 @@ const Home = (): React.JSX.Element => {
           </main>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isNewCompanyModalOpen}
+        title="새 채팅을 시작할까요?"
+        message={
+          <>
+            현재 선택되어 있는 기업은{" "}
+            <strong className="font-bold text-[var(--text-h)]">
+              [{selectedCompany}]
+            </strong>
+            입니다.
+            <br />
+            <br />
+            새로운 기업인{" "}
+            <strong className="font-bold text-[var(--text-h)]">
+              [{detectNewCompany}]
+            </strong>
+            에 대한 분석을 시작하고 새 대화방을 여시겠습니까?
+          </>
+        }
+        confirmText="새 대화 시작"
+        cancelText="취소"
+        onConfirm={handleConfirmNewCompany}
+        onCancel={handleCancelNewCompany}
+      />
     </div>
   );
 };

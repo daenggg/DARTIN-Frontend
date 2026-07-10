@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import ConfirmModal from "../common/ConfirmModal";
+import {
+  fetchChatSessions,
+  updateSessionPin,
+  deleteChatSession
+} from "../../services/chatApi";
 
-interface ChatSession {
-  sessionId: string;
-  companyName: string;
-  updatedAt: string;
-  isPinned: boolean;
-  pinnedAt?: string | null;
-  isDeleting?: boolean;
-}
+import { type ChatSession } from "../../types/index";
 
 interface ChatHistorySidebarProps {
   isOpen: boolean;
@@ -39,13 +36,9 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   }, [isOpen]);
 
   const fetchSessions = async () => {
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/chat/sessions`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-      setSessions(res.data.sessions || []);
+      const data = await fetchChatSessions();
+      setSessions(data.sessions || []);
     } catch (err: any) {
       console.error("fetchSessions failed:", err);
     }
@@ -53,8 +46,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   const togglePin = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
     const session = sessions.find((s) => s.sessionId === sessionId);
     if (!session) return;
@@ -76,13 +67,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     );
 
     try {
-      await axios.patch(
-        `${BACKEND_URL}/api/chat/sessions/${sessionId}/${endpoint}`,
-        {},
-        {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-        }
-      );
+      await updateSessionPin(sessionId, endpoint);
       console.log(`[Debug Frontend] ${endpoint} success for session:`, sessionId);
     } catch (err) {
       console.error(`Failed to ${endpoint} session:`, err);
@@ -108,8 +93,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   const handleConfirmDelete = async () => {
     if (!deletingSessionId) return;
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
     setSessions((prev) =>
       prev.map((s) =>
@@ -119,9 +102,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     setIsDeleteModalOpen(false);
 
     try {
-      await axios.delete(`${BACKEND_URL}/api/chat/sessions/${deletingSessionId}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
+      await deleteChatSession(deletingSessionId);
       setTimeout(() => {
         setSessions((prev) => prev.filter((s) => s.sessionId !== deletingSessionId));
         if (activeSessionId === deletingSessionId) {

@@ -77,45 +77,50 @@ const formatMoney = (val: number): string => {
   return `${Math.round(val / 1e8).toLocaleString()}억원`;
 };
 
+const SkeletonBlock: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = "", style }) => (
+  <div
+    className={`skeleton-shimmer rounded ${className}`}
+    style={style}
+  />
+);
+
 const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
-  if (!analysisData || !analysisData.basicInfo) {
+  if (!analysisData) {
     return <EmptyState />;
   }
 
   const basic = analysisData.basicInfo;
-  const fin = analysisData.financialInfo || {};
-  const sortedYears = Object.keys(fin).sort();
-  const latestYear = sortedYears[sortedYears.length - 1];
+  const fin = analysisData.financialInfo;
+  const sortedYears = fin ? Object.keys(fin).sort() : [];
+  const latestYear = sortedYears.length > 0 ? sortedYears[sortedYears.length - 1] : undefined;
 
-  const revenueStr = latestYear ? formatMoney(fin[latestYear].revenue) : "-";
-  const opProfitStr = latestYear
-    ? formatMoney(fin[latestYear].operatingProfit)
-    : "-";
-  const debtRatioStr = latestYear ? `${fin[latestYear].debtRatio}%` : "-";
+  const revenueStr = latestYear && fin ? formatMoney(fin[latestYear].revenue) : undefined;
+  const opProfitStr = latestYear && fin ? formatMoney(fin[latestYear].operatingProfit) : undefined;
+  const debtRatioStr = latestYear && fin ? `${fin[latestYear].debtRatio}%` : undefined;
 
-  const mappedNews = (analysisData.news || []).map((item) => ({
-    press: "뉴스",
-    title: item.title,
-    desc: item.summary,
-    time: item.publishedAt.split("T")[0],
-    url: item.url,
-  }));
+  const mappedNews = analysisData.news
+    ? analysisData.news.map((item) => ({
+        press: "뉴스",
+        title: item.title,
+        desc: item.summary,
+        time: item.publishedAt.split("T")[0],
+        url: item.url,
+      }))
+    : undefined;
 
-  const aiFeedbackText =
-    analysisData.aiAnalysis ||
-    "실시간 분석 진행 완료. 분석 탭에서 마크다운 리포트를 확인하실 수 있습니다.";
-
-  const basicInfoItems = [
-    { label: "대표이사", value: basic.ceo },
-    { label: "본사 소재지", value: basic.address },
-    { label: "설립 연도", value: `${basic.establishedYear}년` },
-    {
-      label: "임직원 수",
-      value: basic.employeeCount
-        ? `${basic.employeeCount.toLocaleString()}명`
-        : "정보 없음",
-    },
-  ];
+  const basicInfoItems = basic
+    ? [
+        { label: "대표이사", value: basic.ceo },
+        { label: "본사 소재지", value: basic.address },
+        { label: "설립 연도", value: `${basic.establishedYear}년` },
+        {
+          label: "임직원 수",
+          value: basic.employeeCount
+            ? `${basic.employeeCount.toLocaleString()}명`
+            : "정보 없음",
+        },
+      ]
+    : [];
 
   return (
     <div
@@ -127,20 +132,20 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
       }}
     >
       {/* 0단계: 최상단 채용 공고 퀵 링크 바 */}
-      {analysisData.jobLinks && (
-        <div
-          className="p-2.5 px-5 border-b border-solid flex items-center justify-between shrink-0 max-sm:flex-col max-sm:gap-3 max-sm:items-start"
-          style={{
-            borderBottomColor: "var(--border)",
-            background: "var(--bg)",
-          }}
+      <div
+        className="p-2.5 px-5 border-b border-solid flex items-center justify-between shrink-0 max-sm:flex-col max-sm:gap-3 max-sm:items-start min-h-[49px]"
+        style={{
+          borderBottomColor: "var(--border)",
+          background: "var(--bg)",
+        }}
+      >
+        <span
+          className="text-xs md:text-sm font-extrabold uppercase tracking-wider"
+          style={{ color: "var(--text-h)" }}
         >
-          <span
-            className="text-xs md:text-sm font-extrabold uppercase tracking-wider"
-            style={{ color: "var(--text-h)" }}
-          >
-            채용 정보 및 공고 퀵 링크
-          </span>
+          채용 정보 및 공고 퀵 링크
+        </span>
+        {analysisData.jobLinks ? (
           <div className="flex gap-2">
             <button
               onClick={() =>
@@ -182,8 +187,17 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
               워크24
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex gap-2 items-center">
+            <span className="text-[11px] font-semibold animate-pulse mr-1" style={{ color: "var(--text)" }}>
+              채용 채널 분석 중...
+            </span>
+            <SkeletonBlock style={{ width: "50px", height: "22px", borderRadius: "9999px" }} />
+            <SkeletonBlock style={{ width: "50px", height: "22px", borderRadius: "9999px" }} />
+            <SkeletonBlock style={{ width: "55px", height: "22px", borderRadius: "9999px" }} />
+          </div>
+        )}
+      </div>
 
       {/* 1단계: 최상단 KPI 영역 (3열 격자 구조) */}
       <div
@@ -191,27 +205,36 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
         style={{ borderBottomColor: "var(--border)" }}
       >
         {/* 매출액 */}
-        <div className="p-6 flex flex-col items-start text-left">
+        <div className="p-6 flex flex-col items-start text-left min-h-[110px]">
           <span
             className="text-[10px] font-bold uppercase tracking-wider"
             style={{ color: "var(--text)" }}
           >
             01 / 연간 매출액
           </span>
-          <p
-            className="text-3xl font-black mt-1.5 tracking-tight"
-            style={{ color: "var(--text-h)" }}
-          >
-            {revenueStr}
-          </p>
-          <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
-            {latestYear ? `${latestYear}년 실적 기준` : ""}
-          </span>
+          {revenueStr !== undefined ? (
+            <>
+              <p
+                className="text-3xl font-black mt-1.5 tracking-tight"
+                style={{ color: "var(--text-h)" }}
+              >
+                {revenueStr}
+              </p>
+              <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
+                {latestYear ? `${latestYear}년 실적 기준` : ""}
+              </span>
+            </>
+          ) : (
+            <div className="mt-2.5 flex flex-col gap-1.5 w-full">
+              <SkeletonBlock style={{ width: "120px", height: "28px" }} />
+              <span className="text-[11px] animate-pulse" style={{ color: "var(--text)" }}>재무 공시 분석 중...</span>
+            </div>
+          )}
         </div>
 
         {/* 영업이익 */}
         <div
-          className="p-6 flex flex-col items-start text-left border-solid md:border-l max-md:border-t"
+          className="p-6 flex flex-col items-start text-left border-solid md:border-l max-md:border-t min-h-[110px]"
           style={{
             borderLeftColor: "var(--border)",
             borderTopColor: "var(--border)",
@@ -223,20 +246,29 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           >
             02 / 연간 영업이익
           </span>
-          <p
-            className="text-3xl font-black mt-1.5 tracking-tight"
-            style={{ color: "var(--text-h)" }}
-          >
-            {opProfitStr}
-          </p>
-          <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
-            {latestYear ? `${latestYear}년 실적 기준` : ""}
-          </span>
+          {opProfitStr !== undefined ? (
+            <>
+              <p
+                className="text-3xl font-black mt-1.5 tracking-tight"
+                style={{ color: "var(--text-h)" }}
+              >
+                {opProfitStr}
+              </p>
+              <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
+                {latestYear ? `${latestYear}년 실적 기준` : ""}
+              </span>
+            </>
+          ) : (
+            <div className="mt-2.5 flex flex-col gap-1.5 w-full">
+              <SkeletonBlock style={{ width: "110px", height: "28px" }} />
+              <span className="text-[11px] animate-pulse" style={{ color: "var(--text)" }}>재무 수익 계산 중...</span>
+            </div>
+          )}
         </div>
 
         {/* 부채비율 */}
         <div
-          className="p-6 flex flex-col items-start text-left border-solid md:border-l max-md:border-t"
+          className="p-6 flex flex-col items-start text-left border-solid md:border-l max-md:border-t min-h-[110px]"
           style={{
             borderLeftColor: "var(--border)",
             borderTopColor: "var(--border)",
@@ -248,15 +280,24 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           >
             03 / 최근 부채비율
           </span>
-          <p
-            className="text-3xl font-black mt-1.5 tracking-tight"
-            style={{ color: "var(--text-h)" }}
-          >
-            {debtRatioStr}
-          </p>
-          <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
-            {latestYear ? `${latestYear}년 실적 기준` : ""}
-          </span>
+          {debtRatioStr !== undefined ? (
+            <>
+              <p
+                className="text-3xl font-black mt-1.5 tracking-tight"
+                style={{ color: "var(--text-h)" }}
+              >
+                {debtRatioStr}
+              </p>
+              <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
+                {latestYear ? `${latestYear}년 실적 기준` : ""}
+              </span>
+            </>
+          ) : (
+            <div className="mt-2.5 flex flex-col gap-1.5 w-full">
+              <SkeletonBlock style={{ width: "90px", height: "28px" }} />
+              <span className="text-[11px] animate-pulse" style={{ color: "var(--text)" }}>재무 건전성 추적 중...</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -267,56 +308,77 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
       >
         {/* 좌측 기업 프로필 */}
         <div
-          className="lg:col-span-6 p-6 flex flex-col justify-between border-solid lg:border-r max-lg:border-b box-border"
+          className="lg:col-span-6 p-6 flex flex-col justify-between border-solid lg:border-r max-lg:border-b box-border min-h-[220px]"
           style={{
             borderRightColor: "var(--border)",
             borderBottomColor: "var(--border)",
           }}
         >
-          <div>
-            <div className="flex items-baseline gap-2 mb-5">
-              <h3
-                className="m-0 text-2xl font-bold tracking-tight"
-                style={{ color: "var(--text-h)" }}
-              >
-                {basic.companyName}
-              </h3>
-              <span
-                className="text-xs font-semibold tracking-wider"
-                style={{ color: "var(--text)" }}
-              >
-                [{basic.isListed ? basic.stockMarket || "KOSPI" : "CORP"}]
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3.5">
-              {basicInfoItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-baseline py-1 border-b border-solid text-sm"
-                  style={{ borderBottomColor: "var(--border)" }}
+          {basic ? (
+            <div>
+              <div className="flex items-baseline gap-2 mb-5">
+                <h3
+                  className="m-0 text-2xl font-bold tracking-tight"
+                  style={{ color: "var(--text-h)" }}
                 >
-                  <span
-                    className="font-semibold uppercase tracking-wider text-[10px] shrink-0"
-                    style={{ color: "var(--text)" }}
+                  {basic.companyName}
+                </h3>
+                <span
+                  className="text-xs font-semibold tracking-wider"
+                  style={{ color: "var(--text)" }}
+                >
+                  [{basic.isListed ? basic.stockMarket || "KOSPI" : "CORP"}]
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-3.5">
+                {basicInfoItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-baseline py-1 border-b border-solid text-sm"
+                    style={{ borderBottomColor: "var(--border)" }}
                   >
-                    {item.label}
-                  </span>
-                  <span
-                    className="font-medium text-right pl-4 truncate max-w-[320px]"
-                    style={{ color: "var(--text-h)" }}
-                    title={item.value}
-                  >
-                    {item.value}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className="font-semibold uppercase tracking-wider text-[10px] shrink-0"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {item.label}
+                    </span>
+                    <span
+                      className="font-medium text-right pl-4 truncate max-w-[320px]"
+                      style={{ color: "var(--text-h)" }}
+                      title={item.value}
+                    >
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col w-full">
+              <div className="flex items-center gap-2 mb-5">
+                <SkeletonBlock style={{ width: "120px", height: "24px" }} />
+                <SkeletonBlock style={{ width: "50px", height: "16px" }} />
+              </div>
+              <div className="flex flex-col gap-3.5">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
+                    style={{ borderBottomColor: "var(--border)" }}
+                  >
+                    <SkeletonBlock style={{ width: "60px", height: "12px" }} />
+                    <SkeletonBlock style={{ width: "160px", height: "12px" }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 우측 미디어 타임라인 */}
-        <div className="lg:col-span-6 p-6 flex flex-col box-border">
+        <div className="lg:col-span-6 p-6 flex flex-col box-border min-h-[220px]">
           <h4
             className="m-0 mb-3 text-xs md:text-sm font-extrabold uppercase tracking-wider text-left"
             style={{ color: "var(--text-h)" }}
@@ -324,8 +386,22 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
             관련 최신 뉴스 타임라인
           </h4>
 
-          <div className="flex flex-col gap-3.5">
-            {mappedNews.length === 0 ? (
+          <div className="flex flex-col gap-3.5 flex-1 justify-center">
+            {mappedNews === undefined ? (
+              <div className="flex flex-col gap-3.5 w-full">
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-1.5 border-b border-solid pb-3 last:border-none last:pb-0"
+                    style={{ borderBottomColor: "var(--border)" }}
+                  >
+                    <SkeletonBlock style={{ width: "80px", height: "10px" }} />
+                    <SkeletonBlock style={{ width: "100%", height: "14px" }} />
+                    <SkeletonBlock style={{ width: "80%", height: "10px" }} />
+                  </div>
+                ))}
+              </div>
+            ) : mappedNews.length === 0 ? (
               <div
                 className="text-sm py-6 text-center"
                 style={{ color: "var(--text)" }}
@@ -385,10 +461,18 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           인공지능 모델의 주요 지식 분석 리포트 요약
         </p>
         <div
-          className="text-sm leading-relaxed whitespace-pre-wrap pl-4 border-l border-solid"
+          className="text-sm leading-relaxed whitespace-pre-wrap pl-4 border-l border-solid min-h-[48px] flex flex-col justify-center"
           style={{ color: "var(--text)", borderLeftColor: "var(--border)" }}
         >
-          {aiFeedbackText}
+          {analysisData.aiAnalysis !== undefined ? (
+            analysisData.aiAnalysis
+          ) : (
+            <div className="flex flex-col gap-2 w-full">
+              <SkeletonBlock style={{ width: "100%", height: "14px" }} />
+              <SkeletonBlock style={{ width: "95%", height: "14px" }} />
+              <SkeletonBlock style={{ width: "65%", height: "14px" }} />
+            </div>
+          )}
         </div>
       </div>
     </div>

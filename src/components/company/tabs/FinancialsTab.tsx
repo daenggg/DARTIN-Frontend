@@ -147,12 +147,26 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
   };
 };
 
+const SkeletonBlock: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = "", style }) => (
+  <div
+    className={`skeleton-shimmer rounded ${className}`}
+    style={style}
+  />
+);
+
 const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) => {
-  if (!analysisData || !analysisData.financialInfo) {
+  if (!analysisData) {
     return <EmptyState />;
   }
 
-  const data = getFinancialData(analysisData);
+  const hasFinancialData = !!analysisData.financialInfo;
+  const data = hasFinancialData ? getFinancialData(analysisData) : {
+    fullName: analysisData.basicInfo?.companyName || "해당 기업",
+    employeeCount: analysisData.basicInfo?.employeeCount || 0,
+    financialData: [],
+    tableData: [],
+    years: [],
+  };
 
   const [chartColors, setChartColors] = useState({
     revenue: "#d4543d",
@@ -163,6 +177,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
   });
 
   useEffect(() => {
+    if (!hasFinancialData) return;
     const style = getComputedStyle(document.documentElement);
     setChartColors({
       revenue: style.getPropertyValue("--chart-revenue").trim() || "#d4543d",
@@ -171,7 +186,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
       ticks: style.getPropertyValue("--chart-text-ticks").trim() || "#2c2b2a",
       grid: style.getPropertyValue("--chart-grid").trim() || "rgba(0, 0, 0, 0.05)"
     });
-  }, [theme, analysisData]);
+  }, [theme, analysisData, hasFinancialData]);
 
   const isDark = theme === "dark";
 
@@ -252,7 +267,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
       >
         {/* 좌측: 실적 차트 */}
         <div
-          className="lg:col-span-6 p-6 flex flex-col justify-between border-solid lg:border-r max-lg:border-b box-border"
+          className="lg:col-span-6 p-6 flex flex-col justify-between border-solid lg:border-r max-lg:border-b box-border min-h-[380px]"
           style={{
             borderRightColor: "var(--border)",
             borderBottomColor: "var(--border)",
@@ -270,13 +285,29 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
             </p>
           </div>
 
-          <div className="flex-1 min-h-[280px] relative mt-4">
-            <ReactBar key={isDark ? "dark" : "light"} data={chartData} options={chartOptions} />
+          <div className="flex-1 min-h-[280px] relative mt-4 flex items-center justify-center">
+            {hasFinancialData ? (
+              <ReactBar key={isDark ? "dark" : "light"} data={chartData} options={chartOptions} />
+            ) : (
+              <div className="flex flex-col items-center gap-3 w-full h-[240px] justify-center border border-dashed rounded-lg p-6" style={{ borderColor: "var(--border)" }}>
+                <span className="text-xs font-semibold animate-pulse" style={{ color: "var(--text)" }}>
+                  재무 데이터 실시간 추출 중...
+                </span>
+                <div className="flex gap-4 items-end w-full h-[150px] justify-center mt-2">
+                  <SkeletonBlock style={{ width: "35px", height: "80px" }} />
+                  <SkeletonBlock style={{ width: "35px", height: "30px" }} />
+                  <SkeletonBlock style={{ width: "35px", height: "120px" }} />
+                  <SkeletonBlock style={{ width: "35px", height: "45px" }} />
+                  <SkeletonBlock style={{ width: "35px", height: "140px" }} />
+                  <SkeletonBlock style={{ width: "35px", height: "60px" }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* 우측: 임직원 1인당 영업이익 생산성 분석 */}
-        <div className="lg:col-span-6 p-6 flex flex-col justify-between box-border">
+        <div className="lg:col-span-6 p-6 flex flex-col justify-between box-border min-h-[380px]">
           <div className="mb-4 text-left">
             <h3
               className="m-0 text-lg font-bold"
@@ -294,7 +325,21 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
           </div>
 
           <div className="flex flex-col gap-3 flex-1 justify-center mt-4">
-            {data.employeeCount === 0 ? (
+            {!hasFinancialData ? (
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-2.5 border-b border-solid last:border-none text-sm"
+                  style={{ borderBottomColor: "var(--border)" }}
+                >
+                  <div className="flex flex-col items-start gap-1">
+                    <SkeletonBlock style={{ width: "50px", height: "14px" }} />
+                    <SkeletonBlock style={{ width: "130px", height: "10px" }} />
+                  </div>
+                  <SkeletonBlock style={{ width: "80px", height: "24px" }} />
+                </div>
+              ))
+            ) : data.employeeCount === 0 ? (
               <div
                 className="text-sm py-6 text-center"
                 style={{ color: "var(--text)" }}
@@ -388,40 +433,72 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
               }}
             >
               <th className="py-3 px-4 text-left">재무 주요 지표</th>
-              {data.years.map((yr) => (
-                <th key={yr} className="py-3 px-4 text-right">
-                  {yr}년
-                </th>
-              ))}
+              {hasFinancialData ? (
+                data.years.map((yr) => (
+                  <th key={yr} className="py-3 px-4 text-right">
+                    {yr}년
+                  </th>
+                ))
+              ) : (
+                ["-3개년", "-2개년", "-1개년"].map((yr) => (
+                  <th key={yr} className="py-3 px-4 text-right opacity-40">
+                    {yr}
+                  </th>
+                ))
+              )}
             </tr>
           </thead>
           <tbody>
-            {data.tableData.map((row, idx) => (
-              <tr
-                key={idx}
-                className="border-b border-solid transition-colors duration-150 hover:bg-[var(--bg-hover)]"
-                style={{ borderBottomColor: "var(--border)" }}
-              >
-                <td
-                  className="py-2.5 px-4 text-xs font-bold text-left"
-                  style={{ color: "var(--text-h)" }}
+            {hasFinancialData ? (
+              data.tableData.map((row, idx) => (
+                <tr
+                  key={idx}
+                  className="border-b border-solid transition-colors duration-150 hover:bg-[var(--bg-hover)]"
+                  style={{ borderBottomColor: "var(--border)" }}
                 >
-                  {row.label}
-                </td>
-                {data.years.map((yr) => {
-                  const val = row[`y${yr.slice(2)}`] || "-";
-                  return (
-                    <td
-                      key={yr}
-                      className="py-2.5 px-4 text-right text-xs font-semibold font-mono"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {val}
+                  <td
+                    className="py-2.5 px-4 text-xs font-bold text-left"
+                    style={{ color: "var(--text-h)" }}
+                  >
+                    {row.label}
+                  </td>
+                  {data.years.map((yr) => {
+                    const val = row[`y${yr.slice(2)}`] || "-";
+                    return (
+                      <td
+                        key={yr}
+                        className="py-2.5 px-4 text-right text-xs font-semibold font-mono"
+                        style={{ color: "var(--text)" }}
+                      >
+                        {val}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            ) : (
+              ["매출액", "영업이익", "부채비율"].map((label, idx) => (
+                <tr
+                  key={idx}
+                  className="border-b border-solid"
+                  style={{ borderBottomColor: "var(--border)" }}
+                >
+                  <td
+                    className="py-3 px-4 text-xs font-bold text-left"
+                    style={{ color: "var(--text-h)" }}
+                  >
+                    {label}
+                  </td>
+                  {[1, 2, 3].map((i) => (
+                    <td key={i} className="py-3 px-4 text-right">
+                      <div className="flex justify-end">
+                        <SkeletonBlock style={{ width: "80px", height: "12px" }} />
+                      </div>
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

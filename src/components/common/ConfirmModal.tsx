@@ -3,7 +3,7 @@ import React from "react";
 interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
@@ -24,7 +24,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/30 z-[99999] flex items-center justify-center p-4 box-border">
       <div
-        className="w-full max-w-[290px] rounded-2xl border border-solid p-4 shadow-2xl flex flex-col font-sans box-border text-left"
+        className="w-full max-w-[360px] rounded-2xl border border-solid p-4 shadow-2xl flex flex-col font-sans box-border text-left"
         style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
       >
         <h3
@@ -47,7 +47,10 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </button>
           <button
             onClick={onConfirm}
-            className="py-0.5 px-3.5 rounded-full text-[11px] font-bold cursor-pointer text-white transition-all duration-150 border-none bg-red-500 hover:bg-red-600 shadow-sm"
+            className="py-0.5 px-3.5 rounded-full text-[11px] font-bold cursor-pointer text-white transition-all duration-150 border-none shadow-sm"
+            style={{
+              backgroundColor: "var(--accent)",
+            }}
           >
             {confirmText}
           </button>
