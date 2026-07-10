@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MarkdownRenderer } from "../common/MarkdownRenderer";
 
-interface Message {
-  sender: "user" | "ai";
-  text: string;
-  isStreaming?: boolean;
-  isStatus?: boolean;
-  candidates?: Array<{ corp_name: string; corp_code: string }>;
-  isLoginError?: boolean;
-}
+import { type Message } from "../../types/index";
 
 interface ChatAreaProps {
   messages: Message[];

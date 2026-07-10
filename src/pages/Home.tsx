@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 // 레이아웃 & 공통 컴포넌트 임포트
 import ChatHistorySidebar from "../components/chat/ChatHistorySidebar";
 import ChatArea from "../components/chat/ChatArea";
+import { useResizer } from "../hooks/useResizer";
 
 // 기업 정보 & 탭 컴포넌트 임포트
 import DashboardTab from "../components/company/tabs/DashboardTab";
@@ -12,23 +13,16 @@ import FinancialsTab from "../components/company/tabs/FinancialsTab";
 import NewsTab from "../components/company/tabs/NewsTab";
 import DashboardNavbar from "../components/company/DashboardNavbar";
 
-import { fetchCompanyAnalysis } from "../services/companyApi";
-import type {
-  CompanyBasicInfo,
-  FinancialInfoMap,
-  NewsItem,
-  JobLinks,
-} from "../services/companyApi";
-import axios from "axios";
-
-interface Message {
-  sender: "user" | "ai";
-  text: string;
-  isStreaming?: boolean;
-  isStatus?: boolean;
-  candidates?: Array<{ corp_name: string; corp_code: string }>;
-  isLoginError?: boolean;
-}
+import { fetchCompanyAnalysis, searchCompanies } from "../services/companyApi";
+import { logout } from "../services/authApi";
+import { fetchChatSessionDetail } from "../services/chatApi";
+import {
+  type CompanyBasicInfo,
+  type FinancialInfoMap,
+  type NewsItem,
+  type JobLinks,
+  type Message,
+} from "../types/index";
 
 const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -50,10 +44,7 @@ const Home = (): React.JSX.Element => {
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
-  const [leftWidth, setLeftWidth] = useState<number>(() =>
-    Math.round(window.innerWidth * 0.35),
-  ); // 기본 비율 3.5 : 6.5 (채팅 3.5 : 대시보드 6.5)
-  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const { leftWidth, isResizing, handleMouseDown } = useResizer();
 
   // 실시간 수집 데이터 상태 관리
   const [analysisData, setAnalysisData] = useState<
@@ -67,39 +58,6 @@ const Home = (): React.JSX.Element => {
       }
     | undefined
   >(undefined);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      let newWidth = e.clientX;
-      const minWidth = 320;
-      const maxWidth = window.innerWidth * 0.6; // 최대 화면의 60%까지
-      if (newWidth < minWidth) newWidth = minWidth;
-      if (newWidth > maxWidth) newWidth = maxWidth;
-      setLeftWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
-
-  // 채팅 상태 관리
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
@@ -120,74 +78,70 @@ const Home = (): React.JSX.Element => {
     }
   }, []);
 
+  // 세션 상세 조회 및 복원 공통 헬퍼 함수
+  const loadSessionDetails = async (sessionId: string, fallbackCompanyName: string) => {
+    try {
+      const detail = await fetchChatSessionDetail(sessionId);
+      if (detail) {
+        setAnalysisData({
+          basicInfo: detail.company.basicInfo,
+          financialInfo: detail.company.financialInfo,
+          news: detail.company.news,
+          aiAnalysis: detail.company.aiAnalysis,
+          jobLinks: detail.company.jobLinks,
+          sessionId: detail.sessionId || sessionId,
+        });
+
+        const resolvedCompanyName = detail.company?.basicInfo?.companyName || fallbackCompanyName;
+        setSelectedCompany(resolvedCompanyName);
+        sessionStorage.setItem("currentSessionId", sessionId);
+
+        const mappedMsgs = detail.chat.messages.map((m: any) => ({
+          sender: m.role === "user" ? "user" : "ai",
+          text: m.content,
+        }));
+
+        setMessages(
+          mappedMsgs.length > 0
+            ? mappedMsgs
+            : [
+                {
+                  sender: "ai",
+                  text: `"${resolvedCompanyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.`,
+                },
+              ],
+        );
+      }
+    } catch (err: any) {
+      console.error("세션 상세 데이터 로드 실패:", err);
+      sessionStorage.removeItem("currentSessionId");
+      const status = err.response?.status;
+      if (status === 401 || status === 403) {
+        sessionStorage.removeItem("accessToken");
+        navigate("/login");
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: "대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
+          },
+        ]);
+      }
+    }
+  };
+
   // 새로고침 시 세션 유지 및 복원 처리
   useEffect(() => {
-    const restoreSession = async () => {
-      const storedSessionId = sessionStorage.getItem("currentSessionId");
-      if (storedSessionId && storedSessionId !== "New") {
-        const token = sessionStorage.getItem("accessToken");
-        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-        try {
-          const res = await axios.get(
-            `${BACKEND_URL}/api/chat/sessions/${storedSessionId}`,
-            {
-              headers: { Authorization: token ? `Bearer ${token}` : "" },
-            },
-          );
-          const detail = res.data;
-          if (detail) {
-            setAnalysisData({
-              basicInfo: detail.company.basicInfo,
-              financialInfo: detail.company.financialInfo,
-              news: detail.company.news,
-              aiAnalysis: detail.company.aiAnalysis,
-              jobLinks: detail.company.jobLinks,
-              sessionId: detail.sessionId || storedSessionId,
-            });
-            setSelectedCompany(detail.company.basicInfo.companyName);
-
-            // 복원된 채팅 기록 매핑
-            const mappedMsgs = detail.chat.messages.map((m: any) => ({
-              sender: m.role === "user" ? "user" : "ai",
-              text: m.content,
-            }));
-            setMessages(
-              mappedMsgs.length > 0
-                ? mappedMsgs
-                : [
-                    {
-                      sender: "ai",
-                      text: `"${detail.company.basicInfo.companyName}" 분석 대화가 복구되었습니다.`,
-                    },
-                  ],
-            );
-          }
-        } catch (err: any) {
-          console.error("Mount session restoration failed:", err);
-          sessionStorage.removeItem("currentSessionId");
-          if (err.response?.status === 401 || err.response?.status === 403) {
-            sessionStorage.removeItem("accessToken");
-            navigate("/login");
-          }
-        }
-      }
-    };
-
-    restoreSession();
+    const storedSessionId = sessionStorage.getItem("currentSessionId");
+    if (storedSessionId && storedSessionId !== "New") {
+      loadSessionDetails(storedSessionId, "이전 대화");
+    }
   }, []);
 
   const handleLogout = async () => {
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
     try {
-      await axios.post(
-        `${BACKEND_URL}/api/auth/logout`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        },
-      );
+      await logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -281,8 +235,6 @@ const Home = (): React.JSX.Element => {
 
   // 1단계: 최초 기업명 검색 API 호출 공통 헬퍼 함수
   const executeCompanySearch = async (searchQuery: string) => {
-    const token = sessionStorage.getItem("accessToken");
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
     setMessages((prev) => [
       ...prev,
@@ -300,13 +252,10 @@ const Home = (): React.JSX.Element => {
     };
 
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/company/search`, {
-        params: { search_query: searchQuery },
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
+      const resData = await searchCompanies(searchQuery);
 
-      const candidates = res.data?.companies;
-      const isSingleMatch = res.data?.isSingleMatch;
+      const candidates = resData?.companies;
+      const isSingleMatch = resData?.isSingleMatch;
 
       if (isSingleMatch && Array.isArray(candidates) && candidates.length > 0) {
         const singleCompany = candidates[0];
@@ -554,60 +503,7 @@ const Home = (): React.JSX.Element => {
       setAnalysisData(undefined);
       sessionStorage.removeItem("currentSessionId");
     } else {
-      setSelectedCompany(companyName);
-      sessionStorage.setItem("currentSessionId", sessionId);
-
-      const token = sessionStorage.getItem("accessToken");
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
-      try {
-        const res = await axios.get(
-          `${BACKEND_URL}/api/chat/sessions/${sessionId}`,
-          {
-            headers: { Authorization: token ? `Bearer ${token}` : "" },
-          },
-        );
-        const detail = res.data;
-        if (detail) {
-          setAnalysisData({
-            basicInfo: detail.company.basicInfo,
-            financialInfo: detail.company.financialInfo,
-            news: detail.company.news,
-            aiAnalysis: detail.company.aiAnalysis,
-            jobLinks: detail.company.jobLinks,
-            sessionId: detail.sessionId || sessionId,
-          });
-
-          // 복원된 채팅 메시지 매핑 (role -> sender)
-          const mappedMsgs = detail.chat.messages.map((m: any) => ({
-            sender: m.role === "user" ? "user" : "ai",
-            text: m.content,
-          }));
-
-          setMessages(
-            mappedMsgs.length > 0
-              ? mappedMsgs
-              : [
-                  {
-                    sender: "ai",
-                    text: `"${companyName}" 분석 대화가 복구되었습니다. 추가 질문을 하실 수 있습니다.`,
-                  },
-                ],
-          );
-        }
-      } catch (err: any) {
-        console.error("Failed to load session details:", err);
-        const status = err.response?.status;
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "ai",
-            text: status === 401 || status === 403
-              ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
-              : "대화 상세 내용을 복구하는 도중 오류가 발생했습니다.",
-            isLoginError: status === 401 || status === 403,
-          },
-        ]);
-      }
+      loadSessionDetails(sessionId, companyName);
     }
   };
 

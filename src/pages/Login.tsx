@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { loginWithKakao } from "../services/authApi";
 
 // React StrictMode로 인해 로그인 컴포넌트 마운트 시 API가 중복 호출되어 일회성 코드가 만료되는 것을 방지하기 위한 전역 플래그
 let isSent = false;
@@ -39,17 +39,12 @@ const Login = (): React.JSX.Element => {
       if (isSent) return;
       isSent = true;
       setIsExchanging(true);
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
       const sendCodeToBackend = async (kakaoCode: string) => {
         try {
-          const response = await axios.post(
-            `${BACKEND_URL}/api/auth/login`,
-            { code: kakaoCode },
-            { withCredentials: true },
-          );
-          if (response.status === 200) {
-            const { accessToken, user } = response.data;
+          const data = await loginWithKakao(kakaoCode);
+          if (data) {
+            const { accessToken, user } = data;
             sessionStorage.setItem("accessToken", accessToken);
             sessionStorage.setItem("user", JSON.stringify(user));
             navigate("/home");
