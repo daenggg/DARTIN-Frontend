@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 // 레이아웃 & 공통 컴포넌트 임포트
 import ChatHistorySidebar from "../components/chat/ChatHistorySidebar";
 import ChatArea from "../components/chat/ChatArea";
+import ConfirmModal from "../components/common/ConfirmModal";
 import { useResizer } from "../hooks/useResizer";
 
 // 기업 정보 & 탭 컴포넌트 임포트
@@ -13,7 +14,10 @@ import FinancialsTab from "../components/company/tabs/FinancialsTab";
 import NewsTab from "../components/company/tabs/NewsTab";
 import DashboardNavbar from "../components/company/DashboardNavbar";
 
-import { fetchCompanyAnalysisStream, searchCompanies } from "../services/companyApi";
+import {
+  fetchCompanyAnalysisStream,
+  searchCompanies,
+} from "../services/companyApi";
 import { logout } from "../services/authApi";
 import { fetchChatSessionDetail } from "../services/chatApi";
 import {
@@ -28,8 +32,8 @@ const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("사용자");
   const [activeTab, setActiveTab] = useState<string>("대시보드");
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => 
-    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => (localStorage.getItem("theme") as "light" | "dark") || "light",
   );
 
   useEffect(() => {
@@ -44,6 +48,11 @@ const Home = (): React.JSX.Element => {
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
+
+  // 타 기업 감지 시 모달 상태 관리
+  const [detectNewCompany, setDetectNewCompany] = useState<string | null>(null);
+  const [isNewCompanyModalOpen, setIsNewCompanyModalOpen] =
+    useState<boolean>(false);
   const { leftWidth, isResizing, handleMouseDown } = useResizer();
 
   // 실시간 수집 데이터 상태 관리
@@ -66,6 +75,44 @@ const Home = (): React.JSX.Element => {
   ]);
   const [inputValue, setInputValue] = useState<string>("");
 
+  const handleConfirmNewCompany = () => {
+    if (!detectNewCompany) return;
+    const newCorp = detectNewCompany;
+    setIsNewCompanyModalOpen(false);
+    setDetectNewCompany(null);
+
+    // 새 대화 세션 상태로 리셋
+    setMessages([
+      {
+        sender: "ai",
+        text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+      },
+    ]);
+    setSelectedCompany("새 문서");
+    setAnalysisData(undefined);
+    sessionStorage.removeItem("currentSessionId");
+
+    // 새로운 기업 후보군 검색 실행
+    setTimeout(() => {
+      executeCompanySearch(newCorp);
+    }, 50);
+  };
+
+  const handleCancelNewCompany = () => {
+    if (!detectNewCompany) return;
+    const canceledCorp = detectNewCompany;
+    setIsNewCompanyModalOpen(false);
+    setDetectNewCompany(null);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: `다른 기업(${canceledCorp})에 대한 질문이 감지되어 답변 생성이 취소되었습니다. 해당 기업 분석을 시작하려면 새 문서를 열고 진행해 주세요.`,
+      },
+    ]);
+  };
+
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
@@ -79,7 +126,10 @@ const Home = (): React.JSX.Element => {
   }, []);
 
   // 세션 상세 조회 및 복원 공통 헬퍼 함수
-  const loadSessionDetails = async (sessionId: string, fallbackCompanyName: string) => {
+  const loadSessionDetails = async (
+    sessionId: string,
+    fallbackCompanyName: string,
+  ) => {
     try {
       const detail = await fetchChatSessionDetail(sessionId);
       if (detail) {
@@ -92,7 +142,8 @@ const Home = (): React.JSX.Element => {
           sessionId: detail.sessionId || sessionId,
         });
 
-        const resolvedCompanyName = detail.company?.basicInfo?.companyName || fallbackCompanyName;
+        const resolvedCompanyName =
+          detail.company?.basicInfo?.companyName || fallbackCompanyName;
         setSelectedCompany(resolvedCompanyName);
         sessionStorage.setItem("currentSessionId", sessionId);
 
@@ -152,7 +203,11 @@ const Home = (): React.JSX.Element => {
     }
   };
 
-  const handleSelectCandidate = async (corpCode: string, corpName: string, isAutoTrigger = false) => {
+  const handleSelectCandidate = async (
+    corpCode: string,
+    corpName: string,
+    isAutoTrigger = false,
+  ) => {
     if (!isAutoTrigger) {
       setMessages((prev) => [
         ...prev,
@@ -184,7 +239,7 @@ const Home = (): React.JSX.Element => {
         if (type === "status") {
           setMessages((prev) => {
             const targetIdx = prev.findIndex(
-              (m) => m.sender === "ai" && m.isStreaming && m.isStatus
+              (m) => m.sender === "ai" && m.isStreaming && m.isStatus,
             );
             if (targetIdx !== -1) {
               const nextMsgs = [...prev];
@@ -215,7 +270,7 @@ const Home = (): React.JSX.Element => {
 
           setMessages((prev) => {
             const targetIdx = prev.findIndex(
-              (m) => m.sender === "ai" && m.isStreaming
+              (m) => m.sender === "ai" && m.isStreaming,
             );
             if (targetIdx !== -1) {
               const nextMsgs = [...prev];
@@ -235,7 +290,7 @@ const Home = (): React.JSX.Element => {
       console.error(err);
       setMessages((prev) => {
         const targetIdx = prev.findIndex(
-          (m) => m.sender === "ai" && m.isStreaming
+          (m) => m.sender === "ai" && m.isStreaming,
         );
         if (targetIdx !== -1) {
           const nextMsgs = [...prev];
@@ -260,7 +315,6 @@ const Home = (): React.JSX.Element => {
 
   // 1단계: 최초 기업명 검색 API 호출 공통 헬퍼 함수
   const executeCompanySearch = async (searchQuery: string) => {
-
     setMessages((prev) => [
       ...prev,
       {
@@ -285,7 +339,11 @@ const Home = (): React.JSX.Element => {
       if (isSingleMatch && Array.isArray(candidates) && candidates.length > 0) {
         const singleCompany = candidates[0];
         setMessages((prev) => prev.slice(0, -1));
-        handleSelectCandidate(singleCompany.corpCode, singleCompany.corpName, true);
+        handleSelectCandidate(
+          singleCompany.corpCode,
+          singleCompany.corpName,
+          true,
+        );
         return;
       }
 
@@ -305,10 +363,7 @@ const Home = (): React.JSX.Element => {
             },
           ];
         } else {
-          return [
-            ...listWithoutLoading,
-            fallbackSearchMessage,
-          ];
+          return [...listWithoutLoading, fallbackSearchMessage];
         }
       });
     } catch (err: any) {
@@ -330,10 +385,7 @@ const Home = (): React.JSX.Element => {
         }
 
         if (status === 400 || status === 404) {
-          return [
-            ...listWithoutLoading,
-            fallbackSearchMessage,
-          ];
+          return [...listWithoutLoading, fallbackSearchMessage];
         }
 
         return [
@@ -379,7 +431,11 @@ const Home = (): React.JSX.Element => {
         if (contentType && contentType.includes("application/json")) {
           const json = await response.json();
           // [예외 케이스 처리] 단일 매칭(isSingleMatch: true)으로 기업명이 응답된 경우
-          if (json.isSingleMatch && Array.isArray(json.companyList) && json.companyList.length > 0) {
+          if (
+            json.isSingleMatch &&
+            Array.isArray(json.companyList) &&
+            json.companyList.length > 0
+          ) {
             const matchedCompany = json.companyList[0];
             // 1단계 최초 기업명 검색 GET API 자동 재호출
             setTimeout(() => {
@@ -451,6 +507,19 @@ const Home = (): React.JSX.Element => {
                     }
                     return prev;
                   });
+                } else if (eventType === "newCompany") {
+                  const newCorpName = eventData?.companyName;
+                  if (newCorpName) {
+                    setDetectNewCompany(newCorpName);
+                    setIsNewCompanyModalOpen(true);
+                    setMessages((prev) => {
+                      const last = prev[prev.length - 1];
+                      if (last && last.sender === "ai" && last.isStreaming) {
+                        return prev.slice(0, -1);
+                      }
+                      return prev;
+                    });
+                  }
                 } else if (eventType === "done") {
                   setMessages((prev) => {
                     const last = prev[prev.length - 1];
@@ -499,9 +568,10 @@ const Home = (): React.JSX.Element => {
           ...prev,
           {
             sender: "ai",
-            text: status === 401 || status === 403
-              ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
-              : "대화 응답을 수신하는 데 실패했습니다.",
+            text:
+              status === 401 || status === 403
+                ? "로그인 세션이 만료되었습니다. 다시 로그인한 후 이용해 주시기 바랍니다."
+                : "대화 응답을 수신하는 데 실패했습니다.",
             isLoginError: status === 401 || status === 403,
           },
         ]);
@@ -573,7 +643,7 @@ const Home = (): React.JSX.Element => {
   };
 
   return (
-    <div 
+    <div
       className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen flex font-sans overflow-hidden box-border"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
@@ -605,13 +675,13 @@ const Home = (): React.JSX.Element => {
         <div
           onMouseDown={handleMouseDown}
           className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
-          style={{ 
+          style={{
             borderLeftColor: "var(--border)",
-            backgroundColor: isResizing ? "var(--accent)" : "transparent"
+            backgroundColor: isResizing ? "var(--accent)" : "transparent",
           }}
         />
 
-        <div 
+        <div
           className="flex-1 h-full flex flex-col overflow-hidden box-border"
           style={{ background: "var(--bg-panel)" }}
         >
@@ -630,6 +700,31 @@ const Home = (): React.JSX.Element => {
           </main>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isNewCompanyModalOpen}
+        title="새 채팅을 시작할까요?"
+        message={
+          <>
+            현재 선택되어 있는 기업은{" "}
+            <strong className="font-bold text-[var(--text-h)]">
+              [{selectedCompany}]
+            </strong>
+            입니다.
+            <br />
+            <br />
+            새로운 기업인{" "}
+            <strong className="font-bold text-[var(--text-h)]">
+              [{detectNewCompany}]
+            </strong>
+            에 대한 분석을 시작하고 새 대화방을 여시겠습니까?
+          </>
+        }
+        confirmText="새 대화 시작"
+        cancelText="취소"
+        onConfirm={handleConfirmNewCompany}
+        onCancel={handleCancelNewCompany}
+      />
     </div>
   );
 };
