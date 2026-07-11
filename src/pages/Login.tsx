@@ -65,7 +65,7 @@ const Login = (): React.JSX.Element => {
 
   return (
     <div 
-      className="fixed inset-0 w-screen h-screen font-sans overflow-hidden box-border flex flex-col justify-between pt-2 px-6 transition-colors duration-200"
+      className="relative min-h-screen w-full font-sans overflow-hidden box-border flex flex-col justify-between pt-2 px-4 md:px-6 pb-6 transition-colors duration-200"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
       {/* 커스텀 키프레임 애니메이션 선언 */}

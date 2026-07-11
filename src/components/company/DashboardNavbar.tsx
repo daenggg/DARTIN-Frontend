@@ -21,17 +21,17 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 }) => {
   return (
     <div
-      className="flex items-center justify-between border-b border-solid px-6 h-11 shrink-0"
+      className="flex items-center justify-between border-b border-solid px-3 md:px-6 h-12 md:h-11 shrink-0 gap-2 overflow-hidden"
       style={{ borderBottomColor: "var(--border)", background: "var(--bg-panel)" }}
     >
-      <div className="flex gap-6 h-full">
+      <div className="flex gap-3 md:gap-6 h-full overflow-x-auto whitespace-nowrap scrollbar-none">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="bg-transparent border-none px-1 text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out"
+              className="bg-transparent border-none px-1 text-xs md:text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out shrink-0"
               style={{
                 color: isActive ? "var(--text-h)" : "var(--text)",
                 fontWeight: isActive ? "600" : "400",
@@ -50,13 +50,13 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
       </div>
 
       <div
-        className="flex items-center gap-4 text-xs"
+        className="flex items-center gap-2 md:gap-4 text-[10px] md:text-xs shrink-0"
         style={{ color: "var(--text)" }}
       >
-        <span>{userName}님</span>
+        <span className="hidden sm:inline">{userName}님</span>
         <button
           onClick={onLogout}
-          className="border border-solid bg-transparent py-1 px-2.5 rounded text-xs cursor-pointer transition-colors duration-150"
+          className="border border-solid bg-transparent py-1 px-2 rounded text-[10px] md:text-xs cursor-pointer transition-colors duration-150 font-semibold"
           style={{
             borderColor: "var(--border)",
             color: "var(--text)",
@@ -75,12 +75,12 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
         >
           {theme === "light" ? (
             <svg
-              width="14"
-              height="14"
+              width="12"
+              height="12"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -88,12 +88,12 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
             </svg>
           ) : (
             <svg
-              width="14"
-              height="14"
+              width="12"
+              height="12"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >

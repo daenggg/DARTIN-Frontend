@@ -48,6 +48,18 @@ const Home = (): React.JSX.Element => {
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
+  const [activeMobileView, setActiveMobileView] = useState<
+    "chat" | "dashboard"
+  >("chat");
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // 타 기업 감지 시 모달 상태 관리
   const [detectNewCompany, setDetectNewCompany] = useState<string | null>(null);
@@ -215,6 +227,7 @@ const Home = (): React.JSX.Element => {
       ]);
     }
     setSelectedCompany(corpName);
+    setActiveMobileView("dashboard"); // 모바일 환경 대응: 기업 선택 시 대시보드 뷰로 자동 전환
     setAnalysisData({
       basicInfo: undefined,
       financialInfo: undefined,
@@ -468,7 +481,8 @@ const Home = (): React.JSX.Element => {
         typingInterval = setInterval(() => {
           if (typingQueue.length > 0) {
             // 대기 중인 글자 수에 비례하여 타이핑 속도 조절 (동기 햅틱감 유지)
-            const pullCount = typingQueue.length > 30 ? 5 : typingQueue.length > 10 ? 3 : 1;
+            const pullCount =
+              typingQueue.length > 30 ? 5 : typingQueue.length > 10 ? 3 : 1;
             const chars = typingQueue.substring(0, pullCount);
             typingQueue = typingQueue.substring(pullCount);
 
@@ -493,10 +507,7 @@ const Home = (): React.JSX.Element => {
             setMessages((prev) => {
               const last = prev[prev.length - 1];
               if (last && last.sender === "ai" && last.isStreaming) {
-                return [
-                  ...prev.slice(0, -1),
-                  { ...last, isStreaming: false },
-                ];
+                return [...prev.slice(0, -1), { ...last, isStreaming: false }];
               }
               return prev;
             });
@@ -663,52 +674,122 @@ const Home = (): React.JSX.Element => {
         activeSessionId={analysisData?.sessionId}
       />
 
-      <div
-        className="flex flex-1 h-full overflow-hidden box-border"
-        style={{ userSelect: isResizing ? "none" : "auto" }}
-      >
-        <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full">
-          <ChatArea
-            messages={messages}
-            inputValue={inputValue}
-            onInputChange={setInputValue}
-            onSendMessage={handleSendMessage}
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            companyName={selectedCompany}
-            onSelectCandidate={handleSelectCandidate}
-          />
+      {isMobile ? (
+        <div className="flex flex-col flex-1 h-full relative overflow-hidden box-border">
+          {/* 모바일 뷰포트 영역 */}
+          <div className="flex-1 w-full h-[calc(100%-48px)] overflow-hidden flex flex-col">
+            {activeMobileView === "chat" ? (
+              <ChatArea
+                messages={messages}
+                inputValue={inputValue}
+                onInputChange={setInputValue}
+                onSendMessage={handleSendMessage}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                companyName={selectedCompany}
+                onSelectCandidate={handleSelectCandidate}
+              />
+            ) : (
+              <div
+                className="flex-1 w-full h-full flex flex-col overflow-hidden"
+                style={{ background: "var(--bg-panel)" }}
+              >
+                <DashboardNavbar
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  tabs={tabs}
+                  userName={userName}
+                  theme={theme}
+                  setTheme={setTheme}
+                  onLogout={handleLogout}
+                />
+                <main className="flex-1 p-4 overflow-y-auto box-border custom-scrollbar">
+                  {renderTabContent()}
+                </main>
+              </div>
+            )}
+          </div>
+
+          {/* 모바일 하단 탭 바 */}
+          <div
+            className="h-12 border-t border-solid flex shrink-0 items-center justify-around select-none z-30"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--bg-panel)",
+            }}
+          >
+            <button
+              onClick={() => setActiveMobileView("chat")}
+              className="flex-1 h-full flex flex-col items-center justify-center bg-transparent border-none gap-0.5 cursor-pointer text-[10px] font-bold tracking-tight transition-colors duration-150"
+              style={{
+                color:
+                  activeMobileView === "chat" ? "var(--accent)" : "var(--text)",
+              }}
+            >
+              채팅
+            </button>
+            <button
+              onClick={() => setActiveMobileView("dashboard")}
+              className="flex-1 h-full flex flex-col items-center justify-center bg-transparent border-none gap-0.5 cursor-pointer text-[10px] font-bold tracking-tight transition-colors duration-150"
+              style={{
+                color:
+                  activeMobileView === "dashboard"
+                    ? "var(--accent)"
+                    : "var(--text)",
+              }}
+            >
+              분석 대시보드
+            </button>
+          </div>
         </div>
-
-        {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
+      ) : (
         <div
-          onMouseDown={handleMouseDown}
-          className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
-          style={{
-            borderLeftColor: "var(--border)",
-            backgroundColor: isResizing ? "var(--accent)" : "transparent",
-          }}
-        />
-
-        <div
-          className="flex-1 h-full flex flex-col overflow-hidden box-border"
-          style={{ background: "var(--bg-panel)" }}
+          className="flex flex-1 h-full overflow-hidden box-border"
+          style={{ userSelect: isResizing ? "none" : "auto" }}
         >
-          <DashboardNavbar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            tabs={tabs}
-            userName={userName}
-            theme={theme}
-            setTheme={setTheme}
-            onLogout={handleLogout}
+          <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full">
+            <ChatArea
+              messages={messages}
+              inputValue={inputValue}
+              onInputChange={setInputValue}
+              onSendMessage={handleSendMessage}
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+              companyName={selectedCompany}
+              onSelectCandidate={handleSelectCandidate}
+            />
+          </div>
+
+          {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
+          <div
+            onMouseDown={handleMouseDown}
+            className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
+            style={{
+              borderLeftColor: "var(--border)",
+              backgroundColor: isResizing ? "var(--accent)" : "transparent",
+            }}
           />
 
-          <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
-            {renderTabContent()}
-          </main>
+          <div
+            className="flex-1 h-full flex flex-col overflow-hidden box-border"
+            style={{ background: "var(--bg-panel)" }}
+          >
+            <DashboardNavbar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              tabs={tabs}
+              userName={userName}
+              theme={theme}
+              setTheme={setTheme}
+              onLogout={handleLogout}
+            />
+
+            <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
+              {renderTabContent()}
+            </main>
+          </div>
         </div>
-      </div>
+      )}
 
       <ConfirmModal
         isOpen={isNewCompanyModalOpen}
