@@ -1,10 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
 function App(): React.JSX.Element {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

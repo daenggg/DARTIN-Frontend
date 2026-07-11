@@ -54,6 +54,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         style={{ borderBottomColor: "var(--border)", background: "var(--bg-panel)" }}
       >
         <button
+          id="onboarding-sidebar-btn"
           onClick={onToggleSidebar}
           title={isSidebarOpen ? "최근 대화 닫기" : "최근 대화 열기"}
           className="group rounded-3xl p-1.5 px-2 cursor-pointer bg-transparent dark:bg-transparent text-[#71717a] dark:text-zinc-400 transition-all duration-150 flex items-center justify-center h-8 w-8 hover:bg-[#f4f4f5] dark:hover:bg-zinc-800 hover:text-[#18181b] dark:hover:text-zinc-50"
@@ -120,8 +121,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             ) : (
               <div className="flex gap-3 max-w-[90%] flex-col">
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded-3xl bg-[#777777] flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                    AI
+                  <div className="w-6 h-6 rounded-3xl bg-transparent flex items-center justify-center text-white text-xs font-semibold shrink-0 overflow-hidden p-[2px]">
+                    <img src="/robot.png" alt="AI" className="w-full h-full object-contain" />
                   </div>
                   <div 
                     className="text-md leading-relaxed pt-1 whitespace-pre-wrap text-left flex-1"
@@ -226,6 +227,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         style={{ borderTopColor: "var(--border)" }}
       >
         <div 
+          id="onboarding-chat-input"
           className="flex items-center rounded-md px-3.5 gap-3 h-9 transition-colors duration-150 border border-solid"
           style={{ borderColor: "var(--border)" }}
         >

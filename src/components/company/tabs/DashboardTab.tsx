@@ -91,12 +91,22 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
 
   const basic = analysisData.basicInfo;
   const fin = analysisData.financialInfo;
-  const sortedYears = fin ? Object.keys(fin).sort() : [];
+  const isFinStreaming = fin === undefined;
+  const hasFinData = fin !== undefined && Object.keys(fin).length > 0;
+  const sortedYears = hasFinData ? Object.keys(fin).sort() : [];
   const latestYear = sortedYears.length > 0 ? sortedYears[sortedYears.length - 1] : undefined;
 
-  const revenueStr = latestYear && fin ? formatMoney(fin[latestYear].revenue) : undefined;
-  const opProfitStr = latestYear && fin ? formatMoney(fin[latestYear].operatingProfit) : undefined;
-  const debtRatioStr = latestYear && fin ? `${fin[latestYear].debtRatio}%` : undefined;
+  const revenueStr = isFinStreaming
+    ? undefined
+    : (hasFinData && latestYear && fin ? formatMoney(fin[latestYear].revenue) : "정보 없음");
+
+  const opProfitStr = isFinStreaming
+    ? undefined
+    : (hasFinData && latestYear && fin ? formatMoney(fin[latestYear].operatingProfit) : "정보 없음");
+
+  const debtRatioStr = isFinStreaming
+    ? undefined
+    : (hasFinData && latestYear && fin ? `${fin[latestYear].debtRatio}%` : "정보 없음");
 
   const mappedNews = analysisData.news
     ? analysisData.news.map((item) => ({
@@ -214,15 +224,26 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           </span>
           {revenueStr !== undefined ? (
             <>
-              <p
-                className="text-3xl font-black mt-1.5 tracking-tight"
-                style={{ color: "var(--text-h)" }}
-              >
-                {revenueStr}
-              </p>
-              <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
-                {latestYear ? `${latestYear}년 실적 기준` : ""}
-              </span>
+              {revenueStr === "정보 없음" ? (
+                <p
+                  className="text-sm font-bold mt-3"
+                  style={{ color: "var(--text)" }}
+                >
+                  정보 없음
+                </p>
+              ) : (
+                <p
+                  className="text-3xl font-black mt-1.5 tracking-tight"
+                  style={{ color: "var(--text-h)" }}
+                >
+                  {revenueStr}
+                </p>
+              )}
+              {latestYear && (
+                <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
+                  {latestYear}년 실적 기준
+                </span>
+              )}
             </>
           ) : (
             <div className="mt-2.5 flex flex-col gap-1.5 w-full">
@@ -248,15 +269,26 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           </span>
           {opProfitStr !== undefined ? (
             <>
-              <p
-                className="text-3xl font-black mt-1.5 tracking-tight"
-                style={{ color: "var(--text-h)" }}
-              >
-                {opProfitStr}
-              </p>
-              <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
-                {latestYear ? `${latestYear}년 실적 기준` : ""}
-              </span>
+              {opProfitStr === "정보 없음" ? (
+                <p
+                  className="text-sm font-bold mt-3"
+                  style={{ color: "var(--text)" }}
+                >
+                  정보 없음
+                </p>
+              ) : (
+                <p
+                  className="text-3xl font-black mt-1.5 tracking-tight"
+                  style={{ color: "var(--text-h)" }}
+                >
+                  {opProfitStr}
+                </p>
+              )}
+              {latestYear && (
+                <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
+                  {latestYear}년 실적 기준
+                </span>
+              )}
             </>
           ) : (
             <div className="mt-2.5 flex flex-col gap-1.5 w-full">
@@ -282,15 +314,26 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           </span>
           {debtRatioStr !== undefined ? (
             <>
-              <p
-                className="text-3xl font-black mt-1.5 tracking-tight"
-                style={{ color: "var(--text-h)" }}
-              >
-                {debtRatioStr}
-              </p>
-              <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
-                {latestYear ? `${latestYear}년 실적 기준` : ""}
-              </span>
+              {debtRatioStr === "정보 없음" ? (
+                <p
+                  className="text-sm font-bold mt-3"
+                  style={{ color: "var(--text)" }}
+                >
+                  정보 없음
+                </p>
+              ) : (
+                <p
+                  className="text-3xl font-black mt-1.5 tracking-tight"
+                  style={{ color: "var(--text-h)" }}
+                >
+                  {debtRatioStr}
+                </p>
+              )}
+              {latestYear && (
+                <span className="text-xs mt-1" style={{ color: "var(--text)" }}>
+                  {latestYear}년 실적 기준
+                </span>
+              )}
             </>
           ) : (
             <div className="mt-2.5 flex flex-col gap-1.5 w-full">

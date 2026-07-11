@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import ChatHistorySidebar from "../components/chat/ChatHistorySidebar";
 import ChatArea from "../components/chat/ChatArea";
 import ConfirmModal from "../components/common/ConfirmModal";
+import OnboardingModal from "../components/common/OnboardingModal";
 import { useResizer } from "../hooks/useResizer";
 
 // 기업 정보 & 탭 컴포넌트 임포트
@@ -48,12 +49,35 @@ const Home = (): React.JSX.Element => {
   // UI 상태 관리
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("새 문서");
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
+  const [activeMobileView, setActiveMobileView] = useState<
+    "chat" | "dashboard"
+  >("chat");
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // 타 기업 감지 시 모달 상태 관리
   const [detectNewCompany, setDetectNewCompany] = useState<string | null>(null);
   const [isNewCompanyModalOpen, setIsNewCompanyModalOpen] =
     useState<boolean>(false);
   const { leftWidth, isResizing, handleMouseDown } = useResizer();
+
+  // 온보딩 튜토리얼 상태 관리 (첫 방문 신규 가입 유저: isReturningUser가 "false"일 때만 노출)
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    return sessionStorage.getItem("isReturningUser") === "false";
+  });
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    // 한 번 온보딩을 완료/종료하면 세션스토리지 값을 true로 업데이트하여 재노출 방지
+    sessionStorage.setItem("isReturningUser", "true");
+  };
 
   // 실시간 수집 데이터 상태 관리
   const [analysisData, setAnalysisData] = useState<
@@ -215,6 +239,7 @@ const Home = (): React.JSX.Element => {
       ]);
     }
     setSelectedCompany(corpName);
+    setActiveMobileView("dashboard"); // 모바일 환경 대응: 기업 선택 시 대시보드 뷰로 자동 전환
     setAnalysisData({
       basicInfo: undefined,
       financialInfo: undefined,
@@ -413,6 +438,7 @@ const Home = (): React.JSX.Element => {
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
       const sessionUrl = `${BACKEND_URL}/api/chat/sessions/${analysisData.sessionId}/messages`;
 
+      let typingInterval: any = null;
       try {
         const response = await fetch(sessionUrl, {
           method: "POST",
@@ -450,6 +476,8 @@ const Home = (): React.JSX.Element => {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
+        let typingQueue = "";
+        let isStreamingActive = true;
 
         setMessages((prev) => [
           ...prev,
@@ -461,106 +489,110 @@ const Home = (): React.JSX.Element => {
           },
         ]);
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
+        // 타이핑 가속 주입 타이머 시작
+        typingInterval = setInterval(() => {
+          if (typingQueue.length > 0) {
+            // 대기 중인 글자 수에 비례하여 타이핑 속도 조절 (동기 햅틱감 유지)
+            const pullCount =
+              typingQueue.length > 30 ? 5 : typingQueue.length > 10 ? 3 : 1;
+            const chars = typingQueue.substring(0, pullCount);
+            typingQueue = typingQueue.substring(pullCount);
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.sender === "ai" && last.isStreaming) {
+                if (last.isStatus) {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...last, text: chars, isStatus: false },
+                  ];
+                }
+                return [
+                  ...prev.slice(0, -1),
+                  { ...last, text: last.text + chars },
+                ];
+              }
+              return prev;
+            });
+          } else if (!isStreamingActive) {
+            clearInterval(typingInterval);
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.sender === "ai" && last.isStreaming) {
+                return [...prev.slice(0, -1), { ...last, isStreaming: false }];
+              }
+              return prev;
+            });
+          }
+        }, 20);
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            if (trimmed.startsWith("data:")) {
-              const rawData = trimmed.substring(5).trim();
-              try {
-                const parsed = JSON.parse(rawData);
-                const eventType = parsed.type;
-                const eventData = parsed.data;
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
 
-                if (eventType === "message") {
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.sender === "ai" && last.isStreaming) {
-                      if (last.isStatus) {
-                        return [
-                          ...prev.slice(0, -1),
-                          { ...last, text: eventData, isStatus: false },
-                        ];
-                      }
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, text: last.text + eventData },
-                      ];
-                    }
-                    return prev;
-                  });
-                } else if (eventType === "status") {
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.sender === "ai" && last.isStreaming) {
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, text: eventData, isStatus: true },
-                      ];
-                    }
-                    return prev;
-                  });
-                } else if (eventType === "newCompany") {
-                  const newCorpName = eventData?.companyName;
-                  if (newCorpName) {
-                    setDetectNewCompany(newCorpName);
-                    setIsNewCompanyModalOpen(true);
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const dataIndex = line.indexOf("data:");
+              if (dataIndex !== -1) {
+                const leadText = line.substring(0, dataIndex).trim();
+                if (leadText) {
+                  typingQueue += "\n" + leadText;
+                }
+
+                const rawData = line.substring(dataIndex + 5).trim();
+                try {
+                  const parsed = JSON.parse(rawData);
+                  const eventType = parsed.type;
+                  const eventData = parsed.data;
+
+                  if (eventType === "message") {
+                    typingQueue += eventData;
+                  } else if (eventType === "status") {
                     setMessages((prev) => {
                       const last = prev[prev.length - 1];
                       if (last && last.sender === "ai" && last.isStreaming) {
-                        return prev.slice(0, -1);
+                        return [
+                          ...prev.slice(0, -1),
+                          { ...last, text: eventData, isStatus: true },
+                        ];
                       }
                       return prev;
                     });
-                  }
-                } else if (eventType === "done") {
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.sender === "ai" && last.isStreaming) {
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, isStreaming: false },
-                      ];
+                  } else if (eventType === "newCompany") {
+                    const newCorpName = eventData?.companyName;
+                    if (newCorpName) {
+                      clearInterval(typingInterval);
+                      setDetectNewCompany(newCorpName);
+                      setIsNewCompanyModalOpen(true);
+                      setMessages((prev) => {
+                        const last = prev[prev.length - 1];
+                        if (last && last.sender === "ai" && last.isStreaming) {
+                          return prev.slice(0, -1);
+                        }
+                        return prev;
+                      });
                     }
-                    return prev;
-                  });
+                  } else if (eventType === "done") {
+                    isStreamingActive = false;
+                  }
+                } catch (e) {
+                  typingQueue += rawData;
                 }
-              } catch (e) {
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last && last.sender === "ai" && last.isStreaming) {
-                    if (last.isStatus) {
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, text: rawData, isStatus: false },
-                      ];
-                    }
-                    return [
-                      ...prev.slice(0, -1),
-                      { ...last, text: last.text + rawData },
-                    ];
-                  }
-                  return prev;
-                });
+              } else {
+                const trimmed = line.trim();
+                if (trimmed) {
+                  typingQueue += "\n" + trimmed;
+                }
               }
             }
           }
+        } finally {
+          isStreamingActive = false;
         }
-
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last && last.sender === "ai" && last.isStreaming) {
-            return [...prev.slice(0, -1), { ...last, isStreaming: false }];
-          }
-          return prev;
-        });
       } catch (err: any) {
         console.error(err);
         const status = err.response?.status;
@@ -654,52 +686,130 @@ const Home = (): React.JSX.Element => {
         activeSessionId={analysisData?.sessionId}
       />
 
-      <div
-        className="flex flex-1 h-full overflow-hidden box-border"
-        style={{ userSelect: isResizing ? "none" : "auto" }}
-      >
-        <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full">
-          <ChatArea
-            messages={messages}
-            inputValue={inputValue}
-            onInputChange={setInputValue}
-            onSendMessage={handleSendMessage}
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            companyName={selectedCompany}
-            onSelectCandidate={handleSelectCandidate}
-          />
+      {isMobile ? (
+        <div className="flex flex-col flex-1 h-full relative overflow-hidden box-border">
+          {/* 모바일 뷰포트 영역 */}
+          <div className="flex-1 w-full h-[calc(100%-48px)] overflow-hidden flex flex-col">
+            {activeMobileView === "chat" ? (
+              <ChatArea
+                messages={messages}
+                inputValue={inputValue}
+                onInputChange={setInputValue}
+                onSendMessage={handleSendMessage}
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                companyName={selectedCompany}
+                onSelectCandidate={handleSelectCandidate}
+              />
+            ) : (
+              <div
+                className="flex-1 w-full h-full flex flex-col overflow-hidden"
+                style={{ background: "var(--bg-panel)" }}
+              >
+                <DashboardNavbar
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  tabs={tabs}
+                  userName={userName}
+                  theme={theme}
+                  setTheme={setTheme}
+                  onLogout={handleLogout}
+                  onStartTutorial={() => {
+                    sessionStorage.setItem("isReturningUser", "false");
+                    setShowOnboarding(true);
+                  }}
+                />
+                <main className="flex-1 p-4 overflow-y-auto box-border custom-scrollbar">
+                  {renderTabContent()}
+                </main>
+              </div>
+            )}
+          </div>
+
+          {/* 모바일 하단 탭 바 */}
+          <div
+            className="h-12 border-t border-solid flex shrink-0 items-center justify-around select-none z-30"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--bg-panel)",
+            }}
+          >
+            <button
+              onClick={() => setActiveMobileView("chat")}
+              className="flex-1 h-full flex flex-col items-center justify-center bg-transparent border-none gap-0.5 cursor-pointer text-[10px] font-bold tracking-tight transition-colors duration-150"
+              style={{
+                color:
+                  activeMobileView === "chat" ? "var(--accent)" : "var(--text)",
+              }}
+            >
+              채팅
+            </button>
+            <button
+              onClick={() => setActiveMobileView("dashboard")}
+              className="flex-1 h-full flex flex-col items-center justify-center bg-transparent border-none gap-0.5 cursor-pointer text-[10px] font-bold tracking-tight transition-colors duration-150"
+              style={{
+                color:
+                  activeMobileView === "dashboard"
+                    ? "var(--accent)"
+                    : "var(--text)",
+              }}
+            >
+              분석 대시보드
+            </button>
+          </div>
         </div>
-
-        {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
+      ) : (
         <div
-          onMouseDown={handleMouseDown}
-          className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
-          style={{
-            borderLeftColor: "var(--border)",
-            backgroundColor: isResizing ? "var(--accent)" : "transparent",
-          }}
-        />
-
-        <div
-          className="flex-1 h-full flex flex-col overflow-hidden box-border"
-          style={{ background: "var(--bg-panel)" }}
+          className="flex flex-1 h-full overflow-hidden box-border"
+          style={{ userSelect: isResizing ? "none" : "auto" }}
         >
-          <DashboardNavbar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            tabs={tabs}
-            userName={userName}
-            theme={theme}
-            setTheme={setTheme}
-            onLogout={handleLogout}
+          <div style={{ width: `${leftWidth}px` }} className="shrink-0 h-full">
+            <ChatArea
+              messages={messages}
+              inputValue={inputValue}
+              onInputChange={setInputValue}
+              onSendMessage={handleSendMessage}
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+              companyName={selectedCompany}
+              onSelectCandidate={handleSelectCandidate}
+            />
+          </div>
+
+          {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
+          <div
+            onMouseDown={handleMouseDown}
+            className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
+            style={{
+              borderLeftColor: "var(--border)",
+              backgroundColor: isResizing ? "var(--accent)" : "transparent",
+            }}
           />
 
-          <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
-            {renderTabContent()}
-          </main>
+          <div
+            className="flex-1 h-full flex flex-col overflow-hidden box-border"
+            style={{ background: "var(--bg-panel)" }}
+          >
+            <DashboardNavbar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              tabs={tabs}
+              userName={userName}
+              theme={theme}
+              setTheme={setTheme}
+              onLogout={handleLogout}
+              onStartTutorial={() => {
+                sessionStorage.setItem("isReturningUser", "false");
+                setShowOnboarding(true);
+              }}
+            />
+
+            <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
+              {renderTabContent()}
+            </main>
+          </div>
         </div>
-      </div>
+      )}
 
       <ConfirmModal
         isOpen={isNewCompanyModalOpen}
@@ -724,6 +834,12 @@ const Home = (): React.JSX.Element => {
         cancelText="취소"
         onConfirm={handleConfirmNewCompany}
         onCancel={handleCancelNewCompany}
+      />
+
+      {/* 온보딩 가이드 팝업 모달 */}
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={handleCloseOnboarding} 
       />
     </div>
   );

@@ -147,33 +147,42 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
   };
 };
 
-const SkeletonBlock: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = "", style }) => (
-  <div
-    className={`skeleton-shimmer rounded ${className}`}
-    style={style}
-  />
+const SkeletonBlock: React.FC<{
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ className = "", style }) => (
+  <div className={`skeleton-shimmer rounded ${className}`} style={style} />
 );
 
-const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) => {
+const FinancialsTab: React.FC<FinancialsTabProps> = ({
+  analysisData,
+  theme,
+}) => {
   if (!analysisData) {
     return <EmptyState />;
   }
 
-  const hasFinancialData = !!analysisData.financialInfo;
-  const data = hasFinancialData ? getFinancialData(analysisData) : {
-    fullName: analysisData.basicInfo?.companyName || "해당 기업",
-    employeeCount: analysisData.basicInfo?.employeeCount || 0,
-    financialData: [],
-    tableData: [],
-    years: [],
-  };
+  const isStreaming = analysisData.financialInfo === undefined;
+  const hasFinancialData =
+    analysisData.financialInfo !== undefined &&
+    Object.keys(analysisData.financialInfo).length > 0;
+
+  const data = hasFinancialData
+    ? getFinancialData(analysisData)
+    : {
+        fullName: analysisData.basicInfo?.companyName || "해당 기업",
+        employeeCount: analysisData.basicInfo?.employeeCount || 0,
+        financialData: [],
+        tableData: [],
+        years: [],
+      };
 
   const [chartColors, setChartColors] = useState({
     revenue: "#d4543d",
     profit: "#4c483d",
     legend: "#1c1b1a",
     ticks: "#2c2b2a",
-    grid: "rgba(0, 0, 0, 0.05)"
+    grid: "rgba(0, 0, 0, 0.05)",
   });
 
   useEffect(() => {
@@ -184,7 +193,8 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
       profit: style.getPropertyValue("--chart-profit").trim() || "#4c483d",
       legend: style.getPropertyValue("--chart-text-legend").trim() || "#1c1b1a",
       ticks: style.getPropertyValue("--chart-text-ticks").trim() || "#2c2b2a",
-      grid: style.getPropertyValue("--chart-grid").trim() || "rgba(0, 0, 0, 0.05)"
+      grid:
+        style.getPropertyValue("--chart-grid").trim() || "rgba(0, 0, 0, 0.05)",
     });
   }, [theme, analysisData, hasFinancialData]);
 
@@ -287,10 +297,20 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
 
           <div className="flex-1 min-h-[280px] relative mt-4 flex items-center justify-center">
             {hasFinancialData ? (
-              <ReactBar key={isDark ? "dark" : "light"} data={chartData} options={chartOptions} />
-            ) : (
-              <div className="flex flex-col items-center gap-3 w-full h-[240px] justify-center border border-dashed rounded-lg p-6" style={{ borderColor: "var(--border)" }}>
-                <span className="text-xs font-semibold animate-pulse" style={{ color: "var(--text)" }}>
+              <ReactBar
+                key={isDark ? "dark" : "light"}
+                data={chartData}
+                options={chartOptions}
+              />
+            ) : isStreaming ? (
+              <div
+                className="flex flex-col items-center gap-3 w-full h-[240px] justify-center border border-dashed rounded-lg p-6"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <span
+                  className="text-xs font-semibold animate-pulse"
+                  style={{ color: "var(--text)" }}
+                >
                   재무 데이터 실시간 추출 중...
                 </span>
                 <div className="flex gap-4 items-end w-full h-[150px] justify-center mt-2">
@@ -301,6 +321,28 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
                   <SkeletonBlock style={{ width: "35px", height: "140px" }} />
                   <SkeletonBlock style={{ width: "35px", height: "60px" }} />
                 </div>
+              </div>
+            ) : (
+              <div
+                className="flex flex-col items-center gap-2.5 w-full h-[240px] justify-center border border-dashed rounded-lg p-6"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                }}
+              >
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: "var(--text-h)" }}
+                >
+                  공시된 재무제표 정보가 확인되지 않습니다
+                </span>
+                <span
+                  className="text-[10px] text-center max-w-[280px] leading-relaxed"
+                  style={{ color: "var(--text)" }}
+                >
+                  DART에 최근 3개년 보고서가 등록되지 않은 소규모 기업 또는
+                  비상장사 등의 경우 재무 조회가 제한될 수 있습니다.
+                </span>
               </div>
             )}
           </div>
@@ -325,7 +367,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
           </div>
 
           <div className="flex flex-col gap-3 flex-1 justify-center mt-4">
-            {!hasFinancialData ? (
+            {isStreaming ? (
               [1, 2, 3].map((i) => (
                 <div
                   key={i}
@@ -339,6 +381,15 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
                   <SkeletonBlock style={{ width: "80px", height: "24px" }} />
                 </div>
               ))
+            ) : !hasFinancialData ? (
+              <div
+                className="text-xs py-12 text-center leading-relaxed"
+                style={{ color: "var(--text)" }}
+              >
+                조회된 연도별 영업이익 수치가 부재하여
+                <br />
+                1인당 생산성 지표를 산출할 수 없습니다.
+              </div>
             ) : data.employeeCount === 0 ? (
               <div
                 className="text-sm py-6 text-center"
@@ -433,19 +484,17 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
               }}
             >
               <th className="py-3 px-4 text-left">재무 주요 지표</th>
-              {hasFinancialData ? (
-                data.years.map((yr) => (
-                  <th key={yr} className="py-3 px-4 text-right">
-                    {yr}년
-                  </th>
-                ))
-              ) : (
-                ["-3개년", "-2개년", "-1개년"].map((yr) => (
-                  <th key={yr} className="py-3 px-4 text-right opacity-40">
-                    {yr}
-                  </th>
-                ))
-              )}
+              {hasFinancialData
+                ? data.years.map((yr) => (
+                    <th key={yr} className="py-3 px-4 text-right">
+                      {yr}년
+                    </th>
+                  ))
+                : ["-3개년", "-2개년", "-1개년"].map((yr) => (
+                    <th key={yr} className="py-3 px-4 text-right opacity-40">
+                      {yr}
+                    </th>
+                  ))}
             </tr>
           </thead>
           <tbody>
@@ -476,7 +525,7 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
                   })}
                 </tr>
               ))
-            ) : (
+            ) : isStreaming ? (
               ["매출액", "영업이익", "부채비율"].map((label, idx) => (
                 <tr
                   key={idx}
@@ -492,12 +541,24 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({ analysisData, theme }) =>
                   {[1, 2, 3].map((i) => (
                     <td key={i} className="py-3 px-4 text-right">
                       <div className="flex justify-end">
-                        <SkeletonBlock style={{ width: "80px", height: "12px" }} />
+                        <SkeletonBlock
+                          style={{ width: "80px", height: "12px" }}
+                        />
                       </div>
                     </td>
                   ))}
                 </tr>
               ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="py-12 text-center text-xs"
+                  style={{ color: "var(--text)" }}
+                >
+                  조회된 요약 재무 테이블 내역이 없습니다.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
