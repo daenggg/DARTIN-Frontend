@@ -237,7 +237,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   </span>
 
                   <div
-                    className="flex items-center gap-1.5"
+                    className="flex items-center justify-center w-8 h-8 shrink-0 mr-1"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {isHovered || activeMenuId === item.sessionId ? (
@@ -250,7 +250,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               : item.sessionId,
                           );
                         }}
-                        className="border-none cursor-pointer flex items-center justify-center h-6 w-6 rounded-md text-sm transition-all duration-150 hover:bg-[var(--bg-hover)]"
+                        className="border-none cursor-pointer flex items-center justify-center h-[22px] w-[22px] rounded-md text-sm transition-all duration-150 hover:bg-[var(--bg-hover)]"
                         style={{ 
                           color: activeMenuId === item.sessionId ? "var(--text-h)" : "var(--text)", 
                           backgroundColor: activeMenuId === item.sessionId ? "var(--bg-hover)" : "transparent" 
@@ -265,7 +265,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           width="12"
                           height="12"
                           fill="var(--text)"
-                          className="shrink-0 mr-3"
+                          className="shrink-0"
                         >
                           <path d="M16 12V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v8l-2 2v2h5.2v6l1.3 1.3L13.8 18v-2H19v-2l-2-2z" />
                         </svg>

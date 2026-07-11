@@ -413,6 +413,7 @@ const Home = (): React.JSX.Element => {
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
       const sessionUrl = `${BACKEND_URL}/api/chat/sessions/${analysisData.sessionId}/messages`;
 
+      let typingInterval: any = null;
       try {
         const response = await fetch(sessionUrl, {
           method: "POST",
@@ -450,6 +451,8 @@ const Home = (): React.JSX.Element => {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
+        let typingQueue = "";
+        let isStreamingActive = true;
 
         setMessages((prev) => [
           ...prev,
@@ -461,106 +464,112 @@ const Home = (): React.JSX.Element => {
           },
         ]);
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
+        // 타이핑 가속 주입 타이머 시작
+        typingInterval = setInterval(() => {
+          if (typingQueue.length > 0) {
+            // 대기 중인 글자 수에 비례하여 타이핑 속도 조절 (동기 햅틱감 유지)
+            const pullCount = typingQueue.length > 30 ? 5 : typingQueue.length > 10 ? 3 : 1;
+            const chars = typingQueue.substring(0, pullCount);
+            typingQueue = typingQueue.substring(pullCount);
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.sender === "ai" && last.isStreaming) {
+                if (last.isStatus) {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...last, text: chars, isStatus: false },
+                  ];
+                }
+                return [
+                  ...prev.slice(0, -1),
+                  { ...last, text: last.text + chars },
+                ];
+              }
+              return prev;
+            });
+          } else if (!isStreamingActive) {
+            clearInterval(typingInterval);
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.sender === "ai" && last.isStreaming) {
+                return [
+                  ...prev.slice(0, -1),
+                  { ...last, isStreaming: false },
+                ];
+              }
+              return prev;
+            });
+          }
+        }, 20);
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            if (trimmed.startsWith("data:")) {
-              const rawData = trimmed.substring(5).trim();
-              try {
-                const parsed = JSON.parse(rawData);
-                const eventType = parsed.type;
-                const eventData = parsed.data;
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
 
-                if (eventType === "message") {
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.sender === "ai" && last.isStreaming) {
-                      if (last.isStatus) {
-                        return [
-                          ...prev.slice(0, -1),
-                          { ...last, text: eventData, isStatus: false },
-                        ];
-                      }
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, text: last.text + eventData },
-                      ];
-                    }
-                    return prev;
-                  });
-                } else if (eventType === "status") {
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.sender === "ai" && last.isStreaming) {
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, text: eventData, isStatus: true },
-                      ];
-                    }
-                    return prev;
-                  });
-                } else if (eventType === "newCompany") {
-                  const newCorpName = eventData?.companyName;
-                  if (newCorpName) {
-                    setDetectNewCompany(newCorpName);
-                    setIsNewCompanyModalOpen(true);
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const dataIndex = line.indexOf("data:");
+              if (dataIndex !== -1) {
+                const leadText = line.substring(0, dataIndex).trim();
+                if (leadText) {
+                  typingQueue += "\n" + leadText;
+                }
+
+                const rawData = line.substring(dataIndex + 5).trim();
+                try {
+                  const parsed = JSON.parse(rawData);
+                  const eventType = parsed.type;
+                  const eventData = parsed.data;
+
+                  if (eventType === "message") {
+                    typingQueue += eventData;
+                  } else if (eventType === "status") {
                     setMessages((prev) => {
                       const last = prev[prev.length - 1];
                       if (last && last.sender === "ai" && last.isStreaming) {
-                        return prev.slice(0, -1);
+                        return [
+                          ...prev.slice(0, -1),
+                          { ...last, text: eventData, isStatus: true },
+                        ];
                       }
                       return prev;
                     });
-                  }
-                } else if (eventType === "done") {
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.sender === "ai" && last.isStreaming) {
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, isStreaming: false },
-                      ];
+                  } else if (eventType === "newCompany") {
+                    const newCorpName = eventData?.companyName;
+                    if (newCorpName) {
+                      clearInterval(typingInterval);
+                      setDetectNewCompany(newCorpName);
+                      setIsNewCompanyModalOpen(true);
+                      setMessages((prev) => {
+                        const last = prev[prev.length - 1];
+                        if (last && last.sender === "ai" && last.isStreaming) {
+                          return prev.slice(0, -1);
+                        }
+                        return prev;
+                      });
                     }
-                    return prev;
-                  });
+                  } else if (eventType === "done") {
+                    isStreamingActive = false;
+                  }
+                } catch (e) {
+                  typingQueue += rawData;
                 }
-              } catch (e) {
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last && last.sender === "ai" && last.isStreaming) {
-                    if (last.isStatus) {
-                      return [
-                        ...prev.slice(0, -1),
-                        { ...last, text: rawData, isStatus: false },
-                      ];
-                    }
-                    return [
-                      ...prev.slice(0, -1),
-                      { ...last, text: last.text + rawData },
-                    ];
-                  }
-                  return prev;
-                });
+              } else {
+                const trimmed = line.trim();
+                if (trimmed) {
+                  typingQueue += "\n" + trimmed;
+                }
               }
             }
           }
+        } finally {
+          isStreamingActive = false;
         }
-
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last && last.sender === "ai" && last.isStreaming) {
-            return [...prev.slice(0, -1), { ...last, isStreaming: false }];
-          }
-          return prev;
-        });
       } catch (err: any) {
         console.error(err);
         const status = err.response?.status;
