@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import ChatHistorySidebar from "../components/chat/ChatHistorySidebar";
 import ChatArea from "../components/chat/ChatArea";
 import ConfirmModal from "../components/common/ConfirmModal";
+import OnboardingModal from "../components/common/OnboardingModal";
 import { useResizer } from "../hooks/useResizer";
 
 // 기업 정보 & 탭 컴포넌트 임포트
@@ -66,6 +67,17 @@ const Home = (): React.JSX.Element => {
   const [isNewCompanyModalOpen, setIsNewCompanyModalOpen] =
     useState<boolean>(false);
   const { leftWidth, isResizing, handleMouseDown } = useResizer();
+
+  // 온보딩 튜토리얼 상태 관리 (첫 방문 신규 가입 유저: isReturningUser가 "false"일 때만 노출)
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    return sessionStorage.getItem("isReturningUser") === "false";
+  });
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    // 한 번 온보딩을 완료/종료하면 세션스토리지 값을 true로 업데이트하여 재노출 방지
+    sessionStorage.setItem("isReturningUser", "true");
+  };
 
   // 실시간 수집 데이터 상태 관리
   const [analysisData, setAnalysisData] = useState<
@@ -702,6 +714,10 @@ const Home = (): React.JSX.Element => {
                   theme={theme}
                   setTheme={setTheme}
                   onLogout={handleLogout}
+                  onStartTutorial={() => {
+                    sessionStorage.setItem("isReturningUser", "false");
+                    setShowOnboarding(true);
+                  }}
                 />
                 <main className="flex-1 p-4 overflow-y-auto box-border custom-scrollbar">
                   {renderTabContent()}
@@ -782,6 +798,10 @@ const Home = (): React.JSX.Element => {
               theme={theme}
               setTheme={setTheme}
               onLogout={handleLogout}
+              onStartTutorial={() => {
+                sessionStorage.setItem("isReturningUser", "false");
+                setShowOnboarding(true);
+              }}
             />
 
             <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
@@ -814,6 +834,12 @@ const Home = (): React.JSX.Element => {
         cancelText="취소"
         onConfirm={handleConfirmNewCompany}
         onCancel={handleCancelNewCompany}
+      />
+
+      {/* 온보딩 가이드 팝업 모달 */}
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={handleCloseOnboarding} 
       />
     </div>
   );

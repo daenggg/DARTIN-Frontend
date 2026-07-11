@@ -194,8 +194,8 @@ const LoginPreviewCards: React.FC = () => {
             </div>
             
             <div className="flex gap-2 max-w-[95%] items-start">
-              <div className="w-5 h-5 rounded-full bg-[#777777] flex items-center justify-center text-white text-[8px] font-semibold shrink-0">
-                AI
+              <div className="w-5 h-5 rounded-full bg-transparent flex items-center justify-center text-white text-[8px] font-semibold shrink-0 overflow-hidden p-[2px]">
+                <img src="/robot.png" alt="AI" className="w-full h-full object-contain" />
               </div>
               <div 
                 className="pt-0.5 text-left flex-1 font-medium whitespace-pre-wrap animate-pulse" 
@@ -218,8 +218,8 @@ const LoginPreviewCards: React.FC = () => {
             </div>
             
             <div className="flex gap-2 max-w-[95%] items-start">
-              <div className="w-5 h-5 rounded-full bg-[#777777] flex items-center justify-center text-white text-[8px] font-semibold shrink-0">
-                AI
+              <div className="w-5 h-5 rounded-full bg-transparent flex items-center justify-center text-white text-[8px] font-semibold shrink-0 overflow-hidden p-[2px]">
+                <img src="/robot.png" alt="AI" className="w-full h-full object-contain" />
               </div>
               <div 
                 className="pt-0.5 text-left flex-1 font-medium whitespace-pre-wrap" 

@@ -45,9 +45,11 @@ const Login = (): React.JSX.Element => {
         try {
           const data = await loginWithKakao(kakaoCode);
           if (data) {
-            const { accessToken, user } = data;
+            const { accessToken, user, isReturningUser } = data;
             sessionStorage.setItem("accessToken", accessToken);
             sessionStorage.setItem("user", JSON.stringify(user));
+            // 백엔드가 준 실제 복귀 유저 플래그 저장
+            sessionStorage.setItem("isReturningUser", String(isReturningUser));
             navigate("/home");
           }
         } catch (error) {
