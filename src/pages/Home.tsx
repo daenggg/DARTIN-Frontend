@@ -108,8 +108,8 @@ const Home = (): React.JSX.Element => {
     // 새 대화 세션 상태로 리셋
     setMessages([
       {
-        sender: "ai",
-        text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+        sender: "user",
+        text: newCorp,
       },
     ]);
     setSelectedCompany("새 문서");
