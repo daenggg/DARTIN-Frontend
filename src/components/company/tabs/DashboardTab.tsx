@@ -71,17 +71,20 @@ const EmptyState: React.FC = () => (
 );
 
 const formatMoney = (val: number): string => {
+  if (val === undefined || val === null) {
+    return "미공시";
+  }
   if (val >= 1e12) {
     return `${(val / 1e12).toFixed(1)}조원`;
   }
   return `${Math.round(val / 1e8).toLocaleString()}억원`;
 };
 
-const SkeletonBlock: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = "", style }) => (
-  <div
-    className={`skeleton-shimmer rounded ${className}`}
-    style={style}
-  />
+const SkeletonBlock: React.FC<{
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ className = "", style }) => (
+  <div className={`skeleton-shimmer rounded ${className}`} style={style} />
 );
 
 const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
@@ -94,19 +97,38 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
   const isFinStreaming = fin === undefined;
   const hasFinData = fin !== undefined && Object.keys(fin).length > 0;
   const sortedYears = hasFinData ? Object.keys(fin).sort() : [];
-  const latestYear = sortedYears.length > 0 ? sortedYears[sortedYears.length - 1] : undefined;
+  const latestYear =
+    sortedYears.length > 0 ? sortedYears[sortedYears.length - 1] : undefined;
 
   const revenueStr = isFinStreaming
     ? undefined
-    : (hasFinData && latestYear && fin ? formatMoney(fin[latestYear].revenue) : "정보 없음");
+    : hasFinData &&
+        latestYear &&
+        fin &&
+        fin[latestYear].revenue !== undefined &&
+        fin[latestYear].revenue !== null
+      ? formatMoney(fin[latestYear].revenue)
+      : "미공시";
 
   const opProfitStr = isFinStreaming
     ? undefined
-    : (hasFinData && latestYear && fin ? formatMoney(fin[latestYear].operatingProfit) : "정보 없음");
+    : hasFinData &&
+        latestYear &&
+        fin &&
+        fin[latestYear].operatingProfit !== undefined &&
+        fin[latestYear].operatingProfit !== null
+      ? formatMoney(fin[latestYear].operatingProfit)
+      : "미공시";
 
   const debtRatioStr = isFinStreaming
     ? undefined
-    : (hasFinData && latestYear && fin ? `${fin[latestYear].debtRatio}%` : "정보 없음");
+    : hasFinData &&
+        latestYear &&
+        fin &&
+        fin[latestYear].debtRatio !== undefined &&
+        fin[latestYear].debtRatio !== null
+      ? `${fin[latestYear].debtRatio}%`
+      : "미공시";
 
   const mappedNews = analysisData.news
     ? analysisData.news.map((item) => ({
@@ -121,13 +143,14 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
   const basicInfoItems = basic
     ? [
         { label: "대표이사", value: basic.ceo },
+        { label: "업종 (산업군)", value: basic.industry || "정보 부재" },
         { label: "본사 소재지", value: basic.address },
         { label: "설립 연도", value: `${basic.establishedYear}년` },
         {
           label: "임직원 수",
           value: basic.employeeCount
             ? `${basic.employeeCount.toLocaleString()}명`
-            : "정보 없음",
+            : "정보 부재",
         },
       ]
     : [];
@@ -199,12 +222,21 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           </div>
         ) : (
           <div className="flex gap-2 items-center">
-            <span className="text-[11px] font-semibold animate-pulse mr-1" style={{ color: "var(--text)" }}>
+            <span
+              className="text-[11px] font-semibold animate-pulse mr-1"
+              style={{ color: "var(--text)" }}
+            >
               채용 채널 분석 중...
             </span>
-            <SkeletonBlock style={{ width: "50px", height: "22px", borderRadius: "9999px" }} />
-            <SkeletonBlock style={{ width: "50px", height: "22px", borderRadius: "9999px" }} />
-            <SkeletonBlock style={{ width: "55px", height: "22px", borderRadius: "9999px" }} />
+            <SkeletonBlock
+              style={{ width: "50px", height: "22px", borderRadius: "9999px" }}
+            />
+            <SkeletonBlock
+              style={{ width: "50px", height: "22px", borderRadius: "9999px" }}
+            />
+            <SkeletonBlock
+              style={{ width: "55px", height: "22px", borderRadius: "9999px" }}
+            />
           </div>
         )}
       </div>
@@ -248,7 +280,12 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           ) : (
             <div className="mt-2.5 flex flex-col gap-1.5 w-full">
               <SkeletonBlock style={{ width: "120px", height: "28px" }} />
-              <span className="text-[11px] animate-pulse" style={{ color: "var(--text)" }}>재무 공시 분석 중...</span>
+              <span
+                className="text-[11px] animate-pulse"
+                style={{ color: "var(--text)" }}
+              >
+                재무 공시 분석 중...
+              </span>
             </div>
           )}
         </div>
@@ -293,7 +330,12 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           ) : (
             <div className="mt-2.5 flex flex-col gap-1.5 w-full">
               <SkeletonBlock style={{ width: "110px", height: "28px" }} />
-              <span className="text-[11px] animate-pulse" style={{ color: "var(--text)" }}>재무 수익 계산 중...</span>
+              <span
+                className="text-[11px] animate-pulse"
+                style={{ color: "var(--text)" }}
+              >
+                재무 수익 계산 중...
+              </span>
             </div>
           )}
         </div>
@@ -338,7 +380,12 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
           ) : (
             <div className="mt-2.5 flex flex-col gap-1.5 w-full">
               <SkeletonBlock style={{ width: "90px", height: "28px" }} />
-              <span className="text-[11px] animate-pulse" style={{ color: "var(--text)" }}>재무 건전성 추적 중...</span>
+              <span
+                className="text-[11px] animate-pulse"
+                style={{ color: "var(--text)" }}
+              >
+                재무 건전성 추적 중...
+              </span>
             </div>
           )}
         </div>
@@ -359,7 +406,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
         >
           {basic ? (
             <div>
-              <div className="flex items-baseline gap-2 mb-5">
+              <div className="flex items-center gap-2 mb-5">
                 <h3
                   className="m-0 text-2xl font-bold tracking-tight"
                   style={{ color: "var(--text-h)" }}
@@ -367,10 +414,14 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                   {basic.companyName}
                 </h3>
                 <span
-                  className="text-xs font-semibold tracking-wider"
-                  style={{ color: "var(--text)" }}
+                  className="text-[10px] font-black uppercase tracking-wider select-none shrink-0"
+                  style={{
+                    color: basic.isListed ? "var(--accent)" : "var(--text)",
+                  }}
                 >
-                  [{basic.isListed ? basic.stockMarket || "KOSPI" : "CORP"}]
+                  {basic.isListed
+                    ? `${basic.stockMarket || "KOSPI"} 상장`
+                    : "비상장"}
                 </span>
               </div>
 
@@ -422,20 +473,13 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
 
         {/* 우측 미디어 타임라인 */}
         <div className="lg:col-span-6 p-6 flex flex-col box-border min-h-[220px]">
-          <h4
-            className="m-0 mb-3 text-xs md:text-sm font-extrabold uppercase tracking-wider text-left"
-            style={{ color: "var(--text-h)" }}
-          >
-            관련 최신 뉴스 타임라인
-          </h4>
-
-          <div className="flex flex-col gap-3.5 flex-1 justify-center">
+          <div className="flex flex-col gap-2 flex-1 justify-center">
             {mappedNews === undefined ? (
-              <div className="flex flex-col gap-3.5 w-full">
-                {[1, 2].map((i) => (
+              <div className="flex flex-col gap-2 w-full">
+                {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="flex flex-col gap-1.5 border-b border-solid pb-3 last:border-none last:pb-0"
+                    className="flex flex-col gap-1 border-b border-solid pb-1.5 last:border-none last:pb-0"
                     style={{ borderBottomColor: "var(--border)" }}
                   >
                     <SkeletonBlock style={{ width: "80px", height: "10px" }} />
@@ -452,11 +496,11 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                 수집된 뉴스가 없습니다.
               </div>
             ) : (
-              mappedNews.slice(0, 2).map((news, idx) => (
+              mappedNews.slice(0, 3).map((news, idx) => (
                 <div
                   key={idx}
                   onClick={() => window.open(news.url, "_blank")}
-                  className="flex flex-col items-start gap-1 cursor-pointer group border-b border-solid pb-3 last:border-none last:pb-0"
+                  className="flex flex-col items-start gap-0.5 cursor-pointer group border-b border-solid pb-1.5 last:border-none last:pb-0"
                   style={{ borderBottomColor: "var(--border)" }}
                 >
                   <span
@@ -467,7 +511,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                   </span>
                   <div className="w-full flex flex-col items-start text-left">
                     <h5
-                      className="m-0 mb-1 text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors duration-150"
+                      className="m-0 mb-1 text-sm font-bold leading-snug group-hover:text-[var(--accent)] group-hover:underline transition-colors duration-150"
                       style={{ color: "var(--text-h)" }}
                     >
                       {news.title}
@@ -493,16 +537,11 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
       >
         <h4
           className="m-0 mb-1.5 text-xs md:text-sm font-extrabold uppercase tracking-wider"
-          style={{ color: "var(--text-h)" }}
+          style={{ color: "var(--accent)" }}
         >
           AI 종합 분석 리포트
         </h4>
-        <p
-          className="m-0 text-xs font-bold mb-3 tracking-tight"
-          style={{ color: "var(--text)" }}
-        >
-          인공지능 모델의 주요 지식 분석 리포트 요약
-        </p>
+
         <div
           className="text-sm leading-relaxed whitespace-pre-wrap pl-4 border-l border-solid min-h-[48px] flex flex-col justify-center"
           style={{ color: "var(--text)", borderLeftColor: "var(--border)" }}

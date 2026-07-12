@@ -50,7 +50,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       style={{ background: "var(--bg-panel)", color: "var(--text)" }}
     >
       <div 
-        className="h-11 px-5 border-b border-solid flex items-center justify-between shrink-0 box-border relative"
+        className="h-10 px-5 border-b border-solid flex items-center justify-between shrink-0 box-border relative"
         style={{ borderBottomColor: "var(--border)", background: "var(--bg-panel)" }}
       >
         <button

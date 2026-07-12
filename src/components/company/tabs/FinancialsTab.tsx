@@ -113,7 +113,9 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
       ...sortedYears.reduce((acc, yr) => {
         const val = finInfo[yr].revenue;
         const formatted =
-          val >= 1e12
+          val === undefined || val === null
+            ? "미공시"
+            : val >= 1e12
             ? `${(val / 1e12).toFixed(2)}조원`
             : `${Math.round(val / 1e8).toLocaleString()}억원`;
         return { ...acc, [`y${yr.slice(2)}`]: formatted };
@@ -124,7 +126,9 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
       ...sortedYears.reduce((acc, yr) => {
         const val = finInfo[yr].operatingProfit;
         const formatted =
-          val >= 1e12
+          val === undefined || val === null
+            ? "미공시"
+            : val >= 1e12
             ? `${(val / 1e12).toFixed(2)}조원`
             : `${Math.round(val / 1e8).toLocaleString()}억원`;
         return { ...acc, [`y${yr.slice(2)}`]: formatted };
@@ -133,7 +137,9 @@ const getFinancialData = (analysisData: any): CompanyFinancialData => {
     {
       label: "부채비율",
       ...sortedYears.reduce((acc, yr) => {
-        return { ...acc, [`y${yr.slice(2)}`]: `${finInfo[yr].debtRatio}%` };
+        const val = finInfo[yr].debtRatio;
+        const formatted = val === undefined || val === null ? "미공시" : `${val}%`;
+        return { ...acc, [`y${yr.slice(2)}`]: formatted };
       }, {}),
     },
   ];
@@ -400,15 +406,20 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
             ) : (
               data.years.map((yr, idx) => {
                 const rawProfit =
-                  (analysisData.financialInfo || {})[yr]?.operatingProfit || 0;
-                const profitPerEmployee = Math.round(
-                  rawProfit / data.employeeCount,
-                );
-                const isDeficit = rawProfit < 0;
-                const profitFormatted =
-                  rawProfit >= 1e12
-                    ? `${(rawProfit / 1e12).toFixed(2)}조원`
-                    : `${Math.round(rawProfit / 1e8).toLocaleString()}억원`;
+                  (analysisData.financialInfo || {})[yr]?.operatingProfit;
+                const hasProfit = rawProfit !== undefined && rawProfit !== null;
+
+                const profitFormatted = !hasProfit
+                  ? "미공시"
+                  : rawProfit >= 1e12
+                  ? `${(rawProfit / 1e12).toFixed(2)}조원`
+                  : `${Math.round(rawProfit / 1e8).toLocaleString()}억원`;
+
+                const profitPerEmployee = hasProfit && data.employeeCount > 0
+                  ? Math.round(rawProfit / data.employeeCount)
+                  : 0;
+
+                const isDeficit = hasProfit && rawProfit < 0;
 
                 return (
                   <div
@@ -444,11 +455,17 @@ const FinancialsTab: React.FC<FinancialsTabProps> = ({
                           className="text-md font-extrabold"
                           style={{ color: "var(--text-h)" }}
                         >
-                          {isDeficit ? "-" : ""}
-                          {Math.abs(
-                            Math.round(profitPerEmployee / 10000),
-                          ).toLocaleString()}
-                          만원
+                          {!hasProfit || data.employeeCount === 0 ? (
+                            "미공시"
+                          ) : (
+                            <>
+                              {isDeficit ? "-" : ""}
+                              {Math.abs(
+                                Math.round(profitPerEmployee / 10000),
+                              ).toLocaleString()}
+                              만원
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>

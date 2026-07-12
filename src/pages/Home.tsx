@@ -108,8 +108,8 @@ const Home = (): React.JSX.Element => {
     // 새 대화 세션 상태로 리셋
     setMessages([
       {
-        sender: "ai",
-        text: "안녕하세요. 분석을 원하시는 기업명을 입력해 주십시오.",
+        sender: "user",
+        text: newCorp,
       },
     ]);
     setSelectedCompany("새 문서");
@@ -293,6 +293,10 @@ const Home = (): React.JSX.Element => {
             setAnalysisData((prev) => ({ ...prev, sessionId }));
           }
 
+          const completionText = `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`;
+          let typedIndex = 0;
+
+          // 기존 로딩(isStatus) 상태 해제 및 공백으로 셋업
           setMessages((prev) => {
             const targetIdx = prev.findIndex(
               (m) => m.sender === "ai" && m.isStreaming,
@@ -301,14 +305,53 @@ const Home = (): React.JSX.Element => {
               const nextMsgs = [...prev];
               nextMsgs[targetIdx] = {
                 sender: "ai",
-                text: `"${corpName}"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.`,
-                isStreaming: false,
+                text: "",
+                isStreaming: true,
                 isStatus: false,
               };
               return nextMsgs;
             }
             return prev;
           });
+
+          // 한 글자씩 타이핑하여 동적인 효과 연출 (2글자씩 15ms 마다 주르륵 출력)
+          const typingTimer = setInterval(() => {
+            typedIndex += 2;
+            const portion = completionText.substring(0, typedIndex);
+
+            setMessages((prev) => {
+              const targetIdx = prev.findIndex(
+                (m) => m.sender === "ai" && m.isStreaming,
+              );
+              if (targetIdx !== -1) {
+                const nextMsgs = [...prev];
+                nextMsgs[targetIdx] = {
+                  ...nextMsgs[targetIdx],
+                  text: portion,
+                };
+                return nextMsgs;
+              }
+              return prev;
+            });
+
+            if (typedIndex >= completionText.length) {
+              clearInterval(typingTimer);
+              setMessages((prev) => {
+                const targetIdx = prev.findIndex(
+                  (m) => m.sender === "ai" && m.isStreaming,
+                );
+                if (targetIdx !== -1) {
+                  const nextMsgs = [...prev];
+                  nextMsgs[targetIdx] = {
+                    ...nextMsgs[targetIdx],
+                    isStreaming: false,
+                  };
+                  return nextMsgs;
+                }
+                return prev;
+              });
+            }
+          }, 15);
         }
       });
     } catch (err) {
@@ -720,7 +763,9 @@ const Home = (): React.JSX.Element => {
                   }}
                 />
                 <main className="flex-1 p-4 overflow-y-auto box-border custom-scrollbar">
-                  {renderTabContent()}
+                  <div key={activeTab} className="animate-tab-fade">
+                    {renderTabContent()}
+                  </div>
                 </main>
               </div>
             )}
@@ -779,12 +824,15 @@ const Home = (): React.JSX.Element => {
           {/* 클릭 앤 드래그 가능한 리사이즈 핸들러 선 */}
           <div
             onMouseDown={handleMouseDown}
-            className="w-[5px] cursor-col-resize border-l border-solid transition-colors duration-150 h-full shrink-0 z-10 select-none"
-            style={{
-              borderLeftColor: "var(--border)",
-              backgroundColor: isResizing ? "var(--accent)" : "transparent",
-            }}
-          />
+            className="w-[6px] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] cursor-col-resize h-full shrink-0 z-10 select-none flex items-center justify-center transition-colors duration-150"
+          >
+            <div
+              className="w-[1px] h-full transition-colors duration-150"
+              style={{
+                backgroundColor: isResizing ? "var(--accent)" : "var(--border)",
+              }}
+            />
+          </div>
 
           <div
             className="flex-1 h-full flex flex-col overflow-hidden box-border"
@@ -805,7 +853,9 @@ const Home = (): React.JSX.Element => {
             />
 
             <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
-              {renderTabContent()}
+              <div key={activeTab} className="animate-tab-fade">
+                {renderTabContent()}
+              </div>
             </main>
           </div>
         </div>
@@ -837,9 +887,9 @@ const Home = (): React.JSX.Element => {
       />
 
       {/* 온보딩 가이드 팝업 모달 */}
-      <OnboardingModal 
-        isOpen={showOnboarding} 
-        onClose={handleCloseOnboarding} 
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={handleCloseOnboarding}
       />
     </div>
   );

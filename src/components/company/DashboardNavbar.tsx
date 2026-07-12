@@ -25,7 +25,7 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 
   return (
     <div
-      className="flex items-center justify-between border-b border-solid px-3 md:px-6 h-12 md:h-11 shrink-0 gap-2"
+      className="flex items-center justify-between border-b border-solid px-3 md:px-6 h-10 shrink-0 gap-2"
       style={{ borderBottomColor: "var(--border)", background: "var(--bg-panel)" }}
     >
       <div 
@@ -40,15 +40,16 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
               onClick={() => setActiveTab(tab.id)}
               className="bg-transparent border-none px-1 text-xs md:text-sm cursor-pointer h-full relative flex items-center transition-colors duration-150 ease-out shrink-0"
               style={{
-                color: isActive ? "var(--text-h)" : "var(--text)",
-                fontWeight: isActive ? "600" : "400",
+                color: isActive ? "var(--accent)" : "var(--text)",
+                fontWeight: isActive ? "800" : "500",
+                opacity: isActive ? 1 : 0.6,
               }}
             >
               {tab.label}
               {isActive && (
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-[2px]"
-                  style={{ background: "var(--text-h)" }}
+                  className="absolute bottom-0 left-2.5 right-2.5 h-[3px] rounded-t-full"
+                  style={{ background: "var(--accent)" }}
                 />
               )}
             </button>
