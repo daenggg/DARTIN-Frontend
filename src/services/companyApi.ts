@@ -1,3 +1,4 @@
+import { apiClient } from "./authApi";
 import axios from "axios";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
@@ -17,6 +18,28 @@ export const fetchCompanyAnalysisStream = async (
       },
     }
   );
+
+  // SSE 연결 중 401 Unauthorized 감지 시 수동 토큰 리프레시 및 재시도
+  if (response.status === 401) {
+    try {
+      const refreshResponse = await axios.post(
+        `${BACKEND_URL}/api/auth/refresh`,
+        {},
+        { withCredentials: true }
+      );
+      const newAccessToken = refreshResponse.data.accessToken;
+      if (newAccessToken) {
+        sessionStorage.setItem("accessToken", newAccessToken);
+        // 새 토큰으로 스트림 연결 재시도
+        return fetchCompanyAnalysisStream(corpCode, onEvent);
+      }
+    } catch (refreshError) {
+      console.error("Session expired during stream connection. Redirecting to login...", refreshError);
+      sessionStorage.clear();
+      window.location.href = "/";
+      throw refreshError;
+    }
+  }
 
   if (!response.body) throw new Error("No response body");
 
@@ -50,12 +73,10 @@ export const fetchCompanyAnalysisStream = async (
 
 // 입력하신 키워드에 상응하는 상장 기업 후보군 검색 API
 export const searchCompanies = async (searchQuery: string) => {
-  const token = sessionStorage.getItem("accessToken");
-  const response = await axios.get(
-    `${BACKEND_URL}/api/company/search`,
+  const response = await apiClient.get(
+    "/api/company/search",
     {
       params: { search_query: searchQuery },
-      headers: { Authorization: token ? `Bearer ${token}` : "" },
     }
   );
   return response.data;
