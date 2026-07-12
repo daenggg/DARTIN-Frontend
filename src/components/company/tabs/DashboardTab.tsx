@@ -71,6 +71,9 @@ const EmptyState: React.FC = () => (
 );
 
 const formatMoney = (val: number): string => {
+  if (val === undefined || val === null) {
+    return "미공시";
+  }
   if (val >= 1e12) {
     return `${(val / 1e12).toFixed(1)}조원`;
   }
@@ -98,15 +101,21 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
 
   const revenueStr = isFinStreaming
     ? undefined
-    : (hasFinData && latestYear && fin ? formatMoney(fin[latestYear].revenue) : "정보 없음");
+    : (hasFinData && latestYear && fin && fin[latestYear].revenue !== undefined && fin[latestYear].revenue !== null
+        ? formatMoney(fin[latestYear].revenue) 
+        : "미공시");
 
   const opProfitStr = isFinStreaming
     ? undefined
-    : (hasFinData && latestYear && fin ? formatMoney(fin[latestYear].operatingProfit) : "정보 없음");
+    : (hasFinData && latestYear && fin && fin[latestYear].operatingProfit !== undefined && fin[latestYear].operatingProfit !== null
+        ? formatMoney(fin[latestYear].operatingProfit) 
+        : "미공시");
 
   const debtRatioStr = isFinStreaming
     ? undefined
-    : (hasFinData && latestYear && fin ? `${fin[latestYear].debtRatio}%` : "정보 없음");
+    : (hasFinData && latestYear && fin && fin[latestYear].debtRatio !== undefined && fin[latestYear].debtRatio !== null
+        ? `${fin[latestYear].debtRatio}%` 
+        : "미공시");
 
   const mappedNews = analysisData.news
     ? analysisData.news.map((item) => ({
@@ -121,13 +130,14 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
   const basicInfoItems = basic
     ? [
         { label: "대표이사", value: basic.ceo },
+        { label: "업종 (산업군)", value: basic.industry || "정보 부재" },
         { label: "본사 소재지", value: basic.address },
         { label: "설립 연도", value: `${basic.establishedYear}년` },
         {
           label: "임직원 수",
           value: basic.employeeCount
             ? `${basic.employeeCount.toLocaleString()}명`
-            : "정보 없음",
+            : "정보 부재",
         },
       ]
     : [];
@@ -359,7 +369,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
         >
           {basic ? (
             <div>
-              <div className="flex items-baseline gap-2 mb-5">
+              <div className="flex items-center gap-2 mb-5">
                 <h3
                   className="m-0 text-2xl font-bold tracking-tight"
                   style={{ color: "var(--text-h)" }}
@@ -367,10 +377,12 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                   {basic.companyName}
                 </h3>
                 <span
-                  className="text-xs font-semibold tracking-wider"
-                  style={{ color: "var(--text)" }}
+                  className="text-[10px] font-black uppercase tracking-wider select-none shrink-0"
+                  style={{
+                    color: basic.isListed ? "var(--accent)" : "var(--text)",
+                  }}
                 >
-                  [{basic.isListed ? basic.stockMarket || "KOSPI" : "CORP"}]
+                  {basic.isListed ? `${basic.stockMarket || "KOSPI"} 상장` : "비상장"}
                 </span>
               </div>
 
@@ -467,7 +479,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                   </span>
                   <div className="w-full flex flex-col items-start text-left">
                     <h5
-                      className="m-0 mb-1 text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors duration-150"
+                      className="m-0 mb-1 text-sm font-bold leading-snug group-hover:text-[var(--accent)] group-hover:underline transition-colors duration-150"
                       style={{ color: "var(--text-h)" }}
                     >
                       {news.title}
