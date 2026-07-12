@@ -76,11 +76,11 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c8c5b9;
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a39f90;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -92,7 +92,7 @@
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: #c8c5b9 transparent;
 }
 .dark .custom-scrollbar {
   scrollbar-color: #3f3f46 transparent;
