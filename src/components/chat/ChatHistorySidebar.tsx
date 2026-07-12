@@ -31,6 +31,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   const [menuDirections, setMenuDirections] = useState<
     Record<string, "up" | "down">
   >({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -41,11 +42,14 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   }, [isOpen]);
 
   const fetchSessions = async () => {
+    setIsLoading(true);
     try {
       const data = await fetchChatSessions();
       setSessions(data.sessions || []);
     } catch (err: any) {
       console.error("fetchSessions failed:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -214,7 +218,17 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
         {/* 히스토리 목록 */}
         <div className="custom-scrollbar flex-1 overflow-y-auto px-2 pb-4 flex flex-col">
-          {sortedSessions.length === 0 ? (
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center py-12">
+              <div 
+                className="w-5 h-5 rounded-full border-[2.5px] border-solid animate-spin"
+                style={{
+                  borderColor: "rgba(128, 128, 128, 0.15)",
+                  borderTopColor: "var(--accent)",
+                }}
+              />
+            </div>
+          ) : sortedSessions.length === 0 ? (
             <div
               className="text-xs py-8 text-center"
               style={{ color: "var(--text)" }}
