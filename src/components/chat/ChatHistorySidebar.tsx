@@ -165,16 +165,15 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
           borderRight: isOpen ? "1px solid var(--border)" : "none",
           boxShadow: isOpen ? "4px 0 24px rgba(0, 0, 0, 0.08)" : "none",
-          background: "var(--bg)",
+          background: "linear-gradient(to bottom, var(--bg-panel) 0%, var(--bg) 220px)",
         }}
         className="fixed top-0 left-0 h-screen transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col z-[1000] box-border font-sans overflow-hidden"
       >
-        {/* 헤더 및 닫기 버튼 */}
+        {/* 헤더 및 닫기 버튼 (구분선을 완전히 지우고 투명화) */}
         <div
-          className="p-4 flex justify-between items-center whitespace-nowrap border-b border-solid"
+          className="pt-4 px-4 pb-1 flex justify-between items-center whitespace-nowrap"
           style={{
-            borderBottomColor: "var(--border)",
-            background: "var(--bg-panel)",
+            background: "transparent",
           }}
         >
           <div className="flex items-center">
@@ -198,7 +197,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         </div>
 
         {/* 새 대화 버튼 */}
-        <div className="p-3.5 whitespace-nowrap">
+        <div className="pb-3.5 px-3.5 pt-1.5 whitespace-nowrap">
           <button
             onClick={() => {
               onSelectHistory("New", "새 문서");

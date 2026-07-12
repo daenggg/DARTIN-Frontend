@@ -763,7 +763,9 @@ const Home = (): React.JSX.Element => {
                   }}
                 />
                 <main className="flex-1 p-4 overflow-y-auto box-border custom-scrollbar">
-                  {renderTabContent()}
+                  <div key={activeTab} className="animate-tab-fade">
+                    {renderTabContent()}
+                  </div>
                 </main>
               </div>
             )}
@@ -851,7 +853,9 @@ const Home = (): React.JSX.Element => {
             />
 
             <main className="flex-1 p-6 px-8 overflow-y-auto box-border custom-scrollbar">
-              {renderTabContent()}
+              <div key={activeTab} className="animate-tab-fade">
+                {renderTabContent()}
+              </div>
             </main>
           </div>
         </div>
