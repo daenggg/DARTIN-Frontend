@@ -31,6 +31,15 @@ import {
 
 const Home = (): React.JSX.Element => {
   const navigate = useNavigate();
+
+  // 로그인 검증 및 비로그인 유저 강제 리다이렉트
+  useEffect(() => {
+    const token = sessionStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/");
+    }
+  }, [navigate]);
+
   const [userName, setUserName] = useState<string>("사용자");
   const [activeTab, setActiveTab] = useState<string>("대시보드");
   const [theme, setTheme] = useState<"light" | "dark">(
@@ -193,7 +202,7 @@ const Home = (): React.JSX.Element => {
       const status = err.response?.status;
       if (status === 401 || status === 403) {
         sessionStorage.removeItem("accessToken");
-        navigate("/login");
+        navigate("/");
       } else {
         setMessages((prev) => [
           ...prev,
@@ -493,7 +502,14 @@ const Home = (): React.JSX.Element => {
           body: JSON.stringify({ question: userMsg }),
         });
 
-        if (!response.ok) throw new Error("Failed to send message");
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            sessionStorage.clear();
+            navigate("/");
+            return;
+          }
+          throw new Error("Failed to send message");
+        }
 
         // 백엔드가 스트림이 아닌 재검색용 일반 JSON을 응답했는지 응답 헤더 확인
         const contentType = response.headers.get("content-type");
