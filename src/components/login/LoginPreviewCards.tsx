@@ -174,7 +174,7 @@ const LoginPreviewCards: React.FC = () => {
               <line x1="9" y1="3" x2="9" y2="21" />
             </svg>
             <span className="text-[10px] font-black tracking-tight" style={{ color: "var(--text-h)" }}>
-              삼성바이오로직스
+              삼성전자
             </span>
           </div>
           <span className="text-[9px] font-bold" style={{ color: "var(--text)" }}>진단 완료</span>
@@ -189,7 +189,7 @@ const LoginPreviewCards: React.FC = () => {
                 className="px-2.5 py-1.5 rounded-lg rounded-tr-none text-left" 
                 style={{ background: "var(--bg)", color: "var(--text-h)" }}
               >
-                삼성바이오로직스 궁금해 분석해줘!
+                삼성전자 궁금해 분석해줘!
               </div>
             </div>
             
@@ -201,7 +201,7 @@ const LoginPreviewCards: React.FC = () => {
                 className="pt-0.5 text-left flex-1 font-medium whitespace-pre-wrap animate-pulse" 
                 style={{ color: "var(--text-h)" }}
               >
-                "삼성바이오로직스"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.
+                "삼성전자"에 대한 상세 실시간 분석이 완료되었습니다! 대시보드 및 각 상단 탭에서 상세 리포트를 확인해 보세요.
               </div>
             </div>
           </div>

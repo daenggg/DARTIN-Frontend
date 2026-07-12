@@ -153,23 +153,23 @@ const Login = (): React.JSX.Element => {
         </div>
       </header>
 
-      {/* 메인 히어로 컨텐츠 (프리미엄 2열 스플릿 레이아웃) */}
-      <main className="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center z-40 px-4 md:px-8 box-border mt-2 mb-4 overflow-y-auto lg:overflow-visible">
-        {/* 좌측 컬럼 */}
-        <div className="lg:col-span-7 flex flex-col text-left items-start select-none">
+      {/* 메인 히어로 컨텐츠 (프리미엄 2열 스플릿 레이아웃 - 카드는 글씨 줄바꿈 방지를 위해 1300px 기점 수평 소멸, 글씨 축소 지연) */}
+      <main className="w-full max-w-6xl mx-auto flex-1 grid grid-cols-1 min-[1300px]:grid-cols-12 gap-8 min-[1300px]:gap-12 items-center z-40 px-4 md:px-8 box-border mt-2 mb-4 overflow-y-auto min-[1300px]:overflow-visible">
+        {/* 좌측 컬럼 (화면 축소 시 글씨가 갑자기 왼쪽으로 튀는 현상을 막기 위해 패딩 단계를 부드럽게 pl-4 md:pl-10 min-[1300px]:pl-16 분할 매핑) */}
+        <div className="min-[1300px]:col-span-7 flex flex-col text-left items-start select-none pl-4 md:pl-10 min-[1300px]:pl-16">
           <div className="border border-solid border-[#D4543D]/30 text-[#D4543D] text-[10px] md:text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider select-none bg-[#D4543D]/5 inline-block">
             AI 기업 진단 서비스
           </div>
 
           <h1
-            className="text-3xl md:text-[44px] lg:text-[48px] font-black tracking-tight leading-[1.15] m-0 transition-colors duration-200 text-left select-none mt-2 md:mt-3"
+            className="text-[30px] md:text-[44px] min-[1300px]:text-[48px] font-black tracking-tight leading-[1.35] m-0 transition-colors duration-200 text-left select-none mt-2 md:mt-3"
             style={{
               color: "var(--text-h)",
               fontFamily: '"Outfit", "Nunito", sans-serif',
             }}
           >
             이 회사,{" "}
-            <span className="relative inline-block pb-0.5 border-b-[4px] border-solid border-[#D4543D]/80">
+            <span className="relative inline-block pb-0 border-b-[2.5px] border-solid border-[#D4543D]/80">
               들어가도 될까?
             </span>
             <br />
@@ -195,15 +195,21 @@ const Login = (): React.JSX.Element => {
           <div className="flex flex-wrap items-center gap-4 mt-4 md:mt-5">
             <button
               onClick={handleKakaoLogin}
-              className="flex items-center justify-center gap-2.5 bg-[#FEE500] hover:bg-[#FADA0A] text-[#191919] font-extrabold py-3 px-6 rounded-full text-xs md:text-sm cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 select-none border-none shrink-0"
+              className="flex items-center justify-center bg-[#FEE500] hover:bg-[#FEE500]/95 active:scale-95 text-[#191919] font-black py-3 px-8 rounded-full text-xs md:text-sm cursor-pointer transition-all duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)] select-none border-none shrink-0 tracking-tight"
             >
-              💬 카카오로 3초 만에 시작하기 &rarr;
+              <svg 
+                className="w-4 h-4 mr-2 shrink-0 fill-[#191919]" 
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 3c-5.52 0-10 3.58-10 8 0 2.9 1.93 5.45 4.89 6.84l-.97 3.56c-.09.31.25.57.51.39l4.19-2.79c.45.06.9.1 1.38.1 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+              </svg>
+              카카오로 3초 만에 시작하기
             </button>
           </div>
         </div>
 
-        {/* 우측 컬럼: 중첩 카드형 서비스 미리보기 컴포넌트 */}
-        <div className="lg:col-span-5 w-full flex items-center justify-center relative mt-4 lg:mt-0">
+        {/* 우측 컬럼: 중첩 카드형 서비스 미리보기 컴포넌트 (모바일/태블릿 등 화면 폭이 좁을 땐 숨김 처리) */}
+        <div className="hidden min-[1300px]:flex min-[1300px]:col-span-5 w-full items-center justify-center relative mt-0">
           <LoginPreviewCards />
         </div>
       </main>
