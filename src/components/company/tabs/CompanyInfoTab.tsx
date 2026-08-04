@@ -94,7 +94,7 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
             leftItems.map((item, idx) => (
               <div 
                 key={idx} 
-                className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
+                className="flex justify-between items-center py-1.5 border-b border-solid text-sm"
                 style={{ borderBottomColor: "var(--border)" }}
               >
                 <span className="font-semibold uppercase tracking-wider text-[10px] shrink-0" style={{ color: "var(--text)" }}>{item.label}</span>
@@ -123,12 +123,29 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
             rightItems.map((item, idx) => (
               <div 
                 key={idx} 
-                className="flex justify-between items-baseline py-1.5 border-b border-solid text-sm"
+                className="flex justify-between items-center py-1.5 border-b border-solid text-sm"
                 style={{ borderBottomColor: "var(--border)" }}
               >
                 <span className="font-semibold uppercase tracking-wider text-[10px] shrink-0" style={{ color: "var(--text)" }}>{item.label}</span>
-                <span className="font-medium text-right pl-4 truncate max-w-[240px]" style={{ color: "var(--text-h)" }} title={item.value}>
-                  {item.value}
+                <span className={`font-medium text-right pl-4 max-w-[240px] ${item.label === "본사 소재지" ? "line-clamp-2 break-all" : "truncate"}`} style={{ color: "var(--text-h)" }} title={item.value}>
+                  {item.label === "본사 소재지" ? (
+                    (() => {
+                      const val = String(item.value);
+                      const idx = val.indexOf("(");
+                      if (idx !== -1) {
+                        return (
+                          <>
+                            {val.substring(0, idx).trim()}
+                            <br />
+                            {val.substring(idx)}
+                          </>
+                        );
+                      }
+                      return val;
+                    })()
+                  ) : (
+                    item.value
+                  )}
                 </span>
               </div>
             ))

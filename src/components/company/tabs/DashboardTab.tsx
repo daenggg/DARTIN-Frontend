@@ -429,7 +429,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                 {basicInfoItems.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex justify-between items-baseline py-1 border-b border-solid text-sm"
+                    className="flex justify-between items-center py-1 border-b border-solid text-sm"
                     style={{ borderBottomColor: "var(--border)" }}
                   >
                     <span
@@ -439,11 +439,30 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ analysisData }) => {
                       {item.label}
                     </span>
                     <span
-                      className="font-medium text-right pl-4 truncate max-w-[320px]"
+                      className={`font-medium text-right pl-4 max-w-[320px] ${
+                        item.label === "본사 소재지" ? "line-clamp-2 break-all" : "truncate"
+                      }`}
                       style={{ color: "var(--text-h)" }}
                       title={item.value}
                     >
-                      {item.value}
+                      {item.label === "본사 소재지" ? (
+                        (() => {
+                          const val = String(item.value);
+                          const idx = val.indexOf("(");
+                          if (idx !== -1) {
+                            return (
+                              <>
+                                {val.substring(0, idx).trim()}
+                                <br />
+                                {val.substring(idx)}
+                              </>
+                            );
+                          }
+                          return val;
+                        })()
+                      ) : (
+                        item.value
+                      )}
                     </span>
                   </div>
                 ))}
