@@ -60,7 +60,7 @@ const CompanyInfoTab: React.FC<CompanyInfoTabProps> = ({ analysisData }) => {
   const rightItems = basicInfo
     ? [
         { label: "본사 소재지", value: basicInfo.address },
-        { label: "주요 사업", value: basicInfo.industry || "기타 제조/서비스업" },
+        { label: "주요 사업", value: basicInfo.industry || "정보 없음" },
         { label: "상장 여부", value: basicInfo.isListed ? `${basicInfo.stockMarket || "KOSPI"} 상장` : "비상장" },
       ]
     : [];
